@@ -4,6 +4,7 @@ import { HiOutlineSparkles } from 'react-icons/hi';
 import { FiCheck } from 'react-icons/fi';
 import BatchCard from '../components/BatchCard';
 import sareesilhouette from '../assets/saree-silhouette.png';
+import { API_BASE_URL } from '../config';
 
 const FILTERS = [
   { key: 'all', label: 'ALL BATCH', icon: <BsGrid /> },
@@ -17,13 +18,13 @@ export default function Collections() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/batches')
+    fetch(`${API_BASE_URL}/api/batches`)
       .then((res) => res.json())
       .then((data) => {
         const mappedData = data.map((b) => ({
           ...b,
           thumbnails: b.thumbnails.map((t) =>
-            t.startsWith('/api/') ? `http://localhost:5000${t}` : t
+            t.startsWith('/api/') ? `${API_BASE_URL}${t}` : t
           ),
         }));
         setBatchesList(mappedData);

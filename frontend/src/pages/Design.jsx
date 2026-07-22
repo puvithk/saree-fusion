@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { FiUploadCloud, FiX, FiImage } from 'react-icons/fi';
 import { HiOutlineSparkles } from 'react-icons/hi';
 import sareesilhouette from '../assets/saree-silhouette.png';
+import { API_BASE_URL } from '../config';
 
 import redSaree from '../assets/red-saree.png';
 import silkSaree from '../assets/silk-saree.png';
@@ -198,7 +199,7 @@ export default function Design() {
       formData.append('style', selectedStyle);
       formData.append('model', selectedModel);
 
-      const response = await fetch('http://localhost:5000/api/generate', {
+      const response = await fetch(`${API_BASE_URL}/api/generate`, {
         method: 'POST',
         body: formData,
       });

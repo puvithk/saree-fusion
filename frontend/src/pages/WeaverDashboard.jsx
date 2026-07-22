@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { FiCpu, FiDownload, FiCheckCircle, FiClock, FiFileText, FiTrash2 } from 'react-icons/fi';
 import sareesilhouette from '../assets/saree-silhouette.png';
+import { API_BASE_URL } from '../config';
 
 export default function WeaverDashboard() {
   const [orders, setOrders] = useState([]);
@@ -9,7 +10,7 @@ export default function WeaverDashboard() {
   const [selectedLoom, setSelectedLoom] = useState({}); // orderId -> 'traditional' | 'digital' | 'dobby'
 
   const fetchOrders = () => {
-    fetch('http://localhost:5000/api/orders')
+    fetch(`${API_BASE_URL}/api/orders`)
       .then((res) => res.json())
       .then((data) => {
         // Map images to backend URLs
@@ -19,11 +20,11 @@ export default function WeaverDashboard() {
             ...o,
             design: {
               ...design,
-              image: design.image.startsWith('/api/') ? `http://localhost:5000${design.image}` : design.image,
-              templateImage: design.templateImage.startsWith('/api/') ? `http://localhost:5000${design.templateImage}` : design.templateImage,
+              image: design.image.startsWith('/api/') ? `${API_BASE_URL}${design.image}` : design.image,
+              templateImage: design.templateImage.startsWith('/api/') ? `${API_BASE_URL}${design.templateImage}` : design.templateImage,
             },
-            jacquardCardUrl: o.jacquardCardUrl ? `http://localhost:5000${o.jacquardCardUrl}` : null,
-            jacquardTxtUrl: o.jacquardTxtUrl ? `http://localhost:5000${o.jacquardTxtUrl}` : null,
+            jacquardCardUrl: o.jacquardCardUrl ? `${API_BASE_URL}${o.jacquardCardUrl}` : null,
+            jacquardTxtUrl: o.jacquardTxtUrl ? `${API_BASE_URL}${o.jacquardTxtUrl}` : null,
           };
         });
         setOrders(mappedData);
@@ -42,7 +43,7 @@ export default function WeaverDashboard() {
   const handleGenerateJacquard = async (orderId) => {
     setGeneratingId(orderId);
     try {
-      const response = await fetch(`http://localhost:5000/api/orders/${orderId}/generate-jacquard`, {
+      const response = await fetch(`${API_BASE_URL}/api/orders/${orderId}/generate-jacquard`, {
         method: 'POST',
       });
       if (!response.ok) {
@@ -60,7 +61,7 @@ export default function WeaverDashboard() {
   const handleDeleteOrder = async (orderId) => {
     if (!confirm('Are you sure you want to delete this order?')) return;
     try {
-      const response = await fetch(`http://localhost:5000/api/orders/${orderId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/orders/${orderId}`, {
         method: 'DELETE',
       });
       if (!response.ok) {
@@ -465,7 +466,7 @@ export default function WeaverDashboard() {
                               ))}
                             </div>
 
-                            <img src={loomData.bmpUrl ? `http://localhost:5000${loomData.bmpUrl}` : order.jacquardCardUrl} alt="Loom Matrix" className="jacquard-visual-grid" />
+                            <img src={loomData.bmpUrl ? `${API_BASE_URL}${loomData.bmpUrl}` : order.jacquardCardUrl} alt="Loom Matrix" className="jacquard-visual-grid" />
                             
                             <div className="jacquard-stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', width: '100%', marginBottom: '16px' }}>
                               {loomData.stats.map((st, i) => (
@@ -484,7 +485,7 @@ export default function WeaverDashboard() {
                               {loomData.files.map((file, i) => (
                                 <a 
                                   key={i} 
-                                  href={`http://localhost:5000${file.url}`} 
+                                  href={`${API_BASE_URL}${file.url}`} 
                                   download={file.filename} 
                                   className="btn-action download"
                                   style={{

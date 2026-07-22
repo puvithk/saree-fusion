@@ -4,6 +4,7 @@ import { FiChevronLeft } from 'react-icons/fi';
 import SareeCard from '../components/SareeCard';
 import Pagination from '../components/Pagination';
 import sareesilhouette from '../assets/saree-silhouette.png';
+import { API_BASE_URL } from '../config';
 
 export default function FusionResult() {
   const { batchId } = useParams();
@@ -14,27 +15,27 @@ export default function FusionResult() {
   const itemsPerPage = 4;
 
   useEffect(() => {
-    fetch(`http://localhost:5000/api/batches/${batchId}`)
+    fetch(`${API_BASE_URL}/api/batches/${batchId}`)
       .then((res) => res.json())
       .then((data) => {
         // Map relative API urls to absolute backend urls
         const mappedDesigns = (data.designs || []).map((d) => ({
           ...d,
-          image: d.image.startsWith('/api/') ? `http://localhost:5000${d.image}` : d.image,
-          templateImage: d.templateImage.startsWith('/api/') ? `http://localhost:5000${d.templateImage}` : d.templateImage,
+          image: d.image.startsWith('/api/') ? `${API_BASE_URL}${d.image}` : d.image,
+          templateImage: d.templateImage.startsWith('/api/') ? `${API_BASE_URL}${d.templateImage}` : d.templateImage,
         }));
         const mappedUploadedComponents = {
           pallu: (data.uploadedComponents?.pallu || []).map((c) => ({
             ...c,
-            image: c.image.startsWith('/api/') ? `http://localhost:5000${c.image}` : c.image,
+            image: c.image.startsWith('/api/') ? `${API_BASE_URL}${c.image}` : c.image,
           })),
           border: (data.uploadedComponents?.border || []).map((c) => ({
             ...c,
-            image: c.image.startsWith('/api/') ? `http://localhost:5000${c.image}` : c.image,
+            image: c.image.startsWith('/api/') ? `${API_BASE_URL}${c.image}` : c.image,
           })),
           body: (data.uploadedComponents?.body || []).map((c) => ({
             ...c,
-            image: c.image.startsWith('/api/') ? `http://localhost:5000${c.image}` : c.image,
+            image: c.image.startsWith('/api/') ? `${API_BASE_URL}${c.image}` : c.image,
           })),
         };
         setBatch({

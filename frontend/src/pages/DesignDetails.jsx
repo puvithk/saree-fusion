@@ -6,6 +6,7 @@ import SareeCard from '../components/SareeCard';
 import Pagination from '../components/Pagination';
 import sareesilhouette from '../assets/saree-silhouette.png';
 import { materials } from '../data/mockData';
+import { API_BASE_URL } from '../config';
 
 export default function DesignDetails() {
   const { batchId, designId } = useParams();
@@ -32,13 +33,13 @@ export default function DesignDetails() {
   };
 
   useEffect(() => {
-    fetch(`http://localhost:5000/api/batches/${batchId}`)
+    fetch(`${API_BASE_URL}/api/batches/${batchId}`)
       .then((res) => res.json())
       .then((data) => {
         const mappedDesigns = (data.designs || []).map((d) => ({
           ...d,
-          image: d.image.startsWith('/api/') ? `http://localhost:5000${d.image}` : d.image,
-          templateImage: d.templateImage.startsWith('/api/') ? `http://localhost:5000${d.templateImage}` : d.templateImage,
+          image: d.image.startsWith('/api/') ? `${API_BASE_URL}${d.image}` : d.image,
+          templateImage: d.templateImage.startsWith('/api/') ? `${API_BASE_URL}${d.templateImage}` : d.templateImage,
         }));
         const found = mappedDesigns.find((d) => d.id === designId);
         setBatch({ ...data, designs: mappedDesigns });
@@ -85,7 +86,7 @@ export default function DesignDetails() {
     setOrderStatus('ordering');
     setShowConfirmModal(false);
     try {
-      const response = await fetch('http://localhost:5000/api/orders', {
+      const response = await fetch(`${API_BASE_URL}/api/orders`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

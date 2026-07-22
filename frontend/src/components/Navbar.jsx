@@ -10,6 +10,7 @@ const navLinks = [
   { to: '/design', label: 'Design', icon: <BiPencil /> },
   { to: '/collections', label: 'Collections', icon: <BsGrid /> },
   { to: '/sarees', label: 'Saree', icon: <GiClothes /> },
+  { to: '/weaver', label: 'Weaver Profile', icon: <FiUser /> },
 ];
 
 export default function Navbar() {

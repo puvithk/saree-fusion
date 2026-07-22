@@ -1,15 +1,73 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useParams } from 'react-router-dom';
 import { FiChevronLeft } from 'react-icons/fi';
 import SareeCard from '../components/SareeCard';
 import Pagination from '../components/Pagination';
 import sareesilhouette from '../assets/saree-silhouette.png';
-import { generatedDesigns, uploadedComponents } from '../data/mockData';
 
 export default function FusionResult() {
+  const { batchId } = useParams();
+  const [batch, setBatch] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [genPage, setGenPage] = useState(1);
   const [matchPage, setMatchPage] = useState(1);
   const itemsPerPage = 4;
+
+  useEffect(() => {
+    fetch(`http://localhost:5000/api/batches/${batchId}`)
+      .then((res) => res.json())
+      .then((data) => {
+        // Map relative API urls to absolute backend urls
+        const mappedDesigns = (data.designs || []).map((d) => ({
+          ...d,
+          image: d.image.startsWith('/api/') ? `http://localhost:5000${d.image}` : d.image,
+          templateImage: d.templateImage.startsWith('/api/') ? `http://localhost:5000${d.templateImage}` : d.templateImage,
+        }));
+        const mappedUploadedComponents = {
+          pallu: (data.uploadedComponents?.pallu || []).map((c) => ({
+            ...c,
+            image: c.image.startsWith('/api/') ? `http://localhost:5000${c.image}` : c.image,
+          })),
+          border: (data.uploadedComponents?.border || []).map((c) => ({
+            ...c,
+            image: c.image.startsWith('/api/') ? `http://localhost:5000${c.image}` : c.image,
+          })),
+          body: (data.uploadedComponents?.body || []).map((c) => ({
+            ...c,
+            image: c.image.startsWith('/api/') ? `http://localhost:5000${c.image}` : c.image,
+          })),
+        };
+        setBatch({
+          ...data,
+          designs: mappedDesigns,
+          uploadedComponents: mappedUploadedComponents,
+        });
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error('Error fetching batch details:', err);
+        setLoading(false);
+      });
+  }, [batchId]);
+
+  if (loading) {
+    return (
+      <div style={{ textAlign: 'center', padding: '100px', color: 'var(--text-secondary)' }}>
+        Loading batch details...
+      </div>
+    );
+  }
+
+  if (!batch) {
+    return (
+      <div style={{ textAlign: 'center', padding: '100px', color: 'var(--text-secondary)' }}>
+        Batch not found.
+      </div>
+    );
+  }
+
+  const generatedDesigns = batch.designs || [];
+  const uploadedComponents = batch.uploadedComponents || { pallu: [], border: [], body: [] };
 
   const genStart = (genPage - 1) * itemsPerPage;
   const genItems = generatedDesigns.slice(genStart, genStart + itemsPerPage);
@@ -18,6 +76,8 @@ export default function FusionResult() {
   const matchStart = (matchPage - 1) * itemsPerPage;
   const matchItems = generatedDesigns.slice(matchStart, matchStart + itemsPerPage);
   const matchTotal = Math.ceil(generatedDesigns.length / itemsPerPage);
+
+  const progress = Math.round((batch.generatedDesigns / batch.totalDesigns) * 100) || 100;
 
   return (
     <div className="fusion-result-page">
@@ -42,26 +102,26 @@ export default function FusionResult() {
         {/* Sidebar */}
         <aside className="fusion-sidebar">
           <h3 className="sidebar-title">Batch Information</h3>
-          <span className="batch-id-badge">#FS-2025-06-09-12</span>
+          <span className="batch-id-badge">#{batch.id}</span>
 
           <div className="sidebar-meta">
             <div>
               <span className="meta-label">Created on</span>
-              <span className="meta-value">09 Jun 2025 , 10.30 AM</span>
+              <span className="meta-value">{batch.createdOn}</span>
             </div>
             <div>
               <span className="meta-label">Status</span>
-              <span className="batch-status-badge status-completed small">
-                ✓ Completed
+              <span className={`batch-status-badge ${batch.status === 'generating' ? 'status-generating' : 'status-completed'} small`}>
+                {batch.status === 'generating' ? 'Generating' : '✓ Completed'}
               </span>
             </div>
           </div>
 
           <div className="sidebar-progress-section">
             <span className="meta-label">Generated design</span>
-            <span className="progress-count">8/24</span>
+            <span className="progress-count">{batch.generatedDesigns}/{batch.totalDesigns}</span>
             <div className="batch-progress-bar">
-              <div className="batch-progress-fill" style={{ width: '33%' }} />
+              <div className="batch-progress-fill" style={{ width: `${progress}%` }} />
             </div>
           </div>
 
@@ -71,41 +131,59 @@ export default function FusionResult() {
             <div className="component-group">
               <div className="component-group-header">
                 <span>Pallu Images({uploadedComponents.pallu.length})</span>
-                <a href="#" className="view-all-link">View all</a>
               </div>
-              <div className="component-chips">
-                {uploadedComponents.pallu.map((c) => (
-                  <div key={c.label} className="component-chip">{c.label}</div>
-                ))}
-              </div>
+              {uploadedComponents.pallu.length > 0 ? (
+                <div className="component-chips">
+                  {uploadedComponents.pallu.map((c) => (
+                    <div key={c.label} className="component-chip">{c.label}</div>
+                  ))}
+                </div>
+              ) : (
+                <p className="no-upload-text">No Pallu image uploaded</p>
+              )}
             </div>
 
             <div className="component-group">
               <div className="component-group-header">
                 <span>Border Images({uploadedComponents.border.length})</span>
-                <a href="#" className="view-all-link">View all</a>
               </div>
-              <div className="component-chips">
-                {uploadedComponents.border.map((c) => (
-                  <div key={c.label} className="component-chip">{c.label}</div>
-                ))}
-              </div>
+              {uploadedComponents.border.length > 0 ? (
+                <div className="component-chips">
+                  {uploadedComponents.border.map((c) => (
+                    <div key={c.label} className="component-chip">{c.label}</div>
+                  ))}
+                </div>
+              ) : (
+                <p className="no-upload-text">No Border image uploaded</p>
+              )}
             </div>
 
             <div className="component-group">
               <div className="component-group-header">
-                <span>Body Images(0)</span>
+                <span>Body Images({uploadedComponents.body.length})</span>
               </div>
-              <p className="no-upload-text">No Body image uploaded</p>
+              {uploadedComponents.body.length > 0 ? (
+                <div className="component-chips">
+                  {uploadedComponents.body.map((c) => (
+                    <div key={c.label} className="component-chip">{c.label}</div>
+                  ))}
+                </div>
+              ) : (
+                <p className="no-upload-text">No Body image uploaded</p>
+              )}
             </div>
           </div>
 
           <div className="sidebar-description">
             <h4 className="component-section-title">Design Description</h4>
-            <textarea className="description-textarea" placeholder="Enter design description..." rows={4} />
+            <textarea
+              className="description-textarea"
+              placeholder="Enter design description..."
+              rows={4}
+              value={batch.description || ''}
+              readOnly
+            />
           </div>
-
-          <button className="generate-more-btn">Generate more</button>
         </aside>
 
         {/* Main Content */}
@@ -115,10 +193,10 @@ export default function FusionResult() {
             <div className="saree-grid">
               {genItems.map((saree, i) => (
                 <SareeCard
-                  key={`gen-${genStart + i}`}
+                  key={`gen-${saree.id}`}
                   saree={saree}
                   showTags={true}
-                  linkTo={`/collections/batch/0/design/${genStart + i}`}
+                  linkTo={`/collections/batch/${batchId}/design/${saree.id}`}
                 />
               ))}
             </div>
@@ -130,11 +208,11 @@ export default function FusionResult() {
             <div className="saree-grid">
               {matchItems.map((saree, i) => (
                 <SareeCard
-                  key={`match-${matchStart + i}`}
+                  key={`match-${saree.id}`}
                   saree={saree}
                   showTags={false}
                   showMatch={true}
-                  linkTo={`/collections/batch/0/design/${matchStart + i}`}
+                  linkTo={`/collections/batch/${batchId}/design/${saree.id}`}
                 />
               ))}
             </div>

@@ -1,0 +1,986 @@
+[
+  {
+    "id": "ORD-529117",
+    "batchId": "FS-2026-07-22-215859",
+    "design": {
+      "id": "FS-2026-07-22-215859-001",
+      "name": "Fusion Design P1-B1-B1",
+      "image": "/api/static/batches/FS-2026-07-22-215859/design_0_wearable.png",
+      "templateImage": "/api/static/batches/FS-2026-07-22-215859/design_0_template.png",
+      "tags": [
+        "P1",
+        "B1",
+        "B1"
+      ],
+      "matchPercent": "86% match"
+    },
+    "materialName": "Banarasi Silk",
+    "price": 4235,
+    "customerName": "Sri Devaki",
+    "quantity": 1,
+    "status": "Jacquard Card Generated",
+    "createdOn": "22 Jul 2026, 09:59 PM",
+    "jacquardCardUrl": "/api/static/orders/ORD-529117/jacquard.bmp",
+    "jacquardTxtUrl": "/api/static/orders/ORD-529117/jacquard_cards.txt",
+    "hookSize": 200,
+    "totalCards": 100,
+    "yarnColors": {
+      "pallu": {
+        "hex": "#A06161",
+        "name": "Copper Zari",
+        "role": "Pallu Silk (Weft)"
+      },
+      "border": {
+        "hex": "#B26653",
+        "name": "Copper Zari",
+        "role": "Border Zari (Weft)"
+      },
+      "body": {
+        "hex": "#E18F11",
+        "name": "Golden Zari",
+        "role": "Saree Body (Warp)"
+      }
+    },
+    "loomOutputs": {
+      "traditional": {
+        "name": "Traditional Jacquard Loom",
+        "format": "Card Punch Matrix (.txt/.bmp)",
+        "stats": [
+          {
+            "label": "Warp Hooks",
+            "value": "200"
+          },
+          {
+            "label": "Picks/Cards",
+            "value": "100"
+          },
+          {
+            "label": "Controller",
+            "value": "Manual Punch Cards"
+          }
+        ],
+        "bmpUrl": "/api/static/orders/ORD-529117/jacquard.bmp",
+        "punchCardPreview": [
+          {
+            "card": "Card 001",
+            "bits": "000000000000000000000000...",
+            "r": "0",
+            "g": "0",
+            "b": "0",
+            "colorName": "Charcoal Black",
+            "colorHex": "#000000"
+          },
+          {
+            "card": "Card 002",
+            "bits": "000000000000000000000000...",
+            "r": "0",
+            "g": "0",
+            "b": "0",
+            "colorName": "Charcoal Black",
+            "colorHex": "#000000"
+          },
+          {
+            "card": "Card 003",
+            "bits": "000000000000000000000000...",
+            "r": "0",
+            "g": "0",
+            "b": "0",
+            "colorName": "Charcoal Black",
+            "colorHex": "#000000"
+          },
+          {
+            "card": "Card 004",
+            "bits": "000000000000000000000000...",
+            "r": "0",
+            "g": "0",
+            "b": "0",
+            "colorName": "Charcoal Black",
+            "colorHex": "#000000"
+          },
+          {
+            "card": "Card 005",
+            "bits": "000000000000000000000000...",
+            "r": "0",
+            "g": "0",
+            "b": "0",
+            "colorName": "Charcoal Black",
+            "colorHex": "#47012a"
+          },
+          {
+            "card": "Card 006",
+            "bits": "000000000000000000000000...",
+            "r": "1",
+            "g": "0",
+            "b": "0",
+            "colorName": "Rose Pink",
+            "colorHex": "#ba2665"
+          },
+          {
+            "card": "Card 007",
+            "bits": "000011101010101111111101...",
+            "r": "1",
+            "g": "0",
+            "b": "0",
+            "colorName": "Copper Zari",
+            "colorHex": "#ca6e64"
+          },
+          {
+            "card": "Card 008",
+            "bits": "000000101010000010000101...",
+            "r": "1",
+            "g": "0",
+            "b": "0",
+            "colorName": "Copper Zari",
+            "colorHex": "#c26c5c"
+          },
+          {
+            "card": "Card 009",
+            "bits": "000000000000000000000000...",
+            "r": "1",
+            "g": "0",
+            "b": "0",
+            "colorName": "Copper Zari",
+            "colorHex": "#b96d4e"
+          },
+          {
+            "card": "Card 010",
+            "bits": "000011010110110110101101...",
+            "r": "1",
+            "g": "1",
+            "b": "0",
+            "colorName": "Copper Zari",
+            "colorHex": "#c68859"
+          }
+        ],
+        "files": [
+          {
+            "label": "Download Loom BMP",
+            "url": "/api/static/orders/ORD-529117/jacquard.bmp",
+            "filename": "jacquard.bmp"
+          },
+          {
+            "label": "Download Cards TXT",
+            "url": "/api/static/orders/ORD-529117/jacquard_cards.txt",
+            "filename": "jacquard_cards.txt"
+          }
+        ]
+      },
+      "digital": {
+        "name": "Modern Digital Jacquard",
+        "format": "Staubli JC5 / WIF Data",
+        "stats": [
+          {
+            "label": "Electronic Hooks",
+            "value": "200"
+          },
+          {
+            "label": "Weft Picks",
+            "value": "100"
+          },
+          {
+            "label": "Standard format",
+            "value": "Staubli JC5 / WIF"
+          }
+        ],
+        "bmpUrl": "/api/static/orders/ORD-529117/jacquard.bmp",
+        "files": [
+          {
+            "label": "Staubli File (.jac)",
+            "url": "/api/static/orders/ORD-529117/digital_pattern.jac",
+            "filename": "digital_pattern.jac"
+          },
+          {
+            "label": "Loom Tie-Up (.wif)",
+            "url": "/api/static/orders/ORD-529117/digital_tieup.wif",
+            "filename": "digital_tieup.wif"
+          }
+        ]
+      },
+      "dobby": {
+        "name": "Harness Dobby Loom",
+        "format": "Lift & Draw Plan (.dob/.txt)",
+        "stats": [
+          {
+            "label": "Harnesses",
+            "value": "24"
+          },
+          {
+            "label": "Total Picks",
+            "value": "100"
+          },
+          {
+            "label": "Draft Rule",
+            "value": "24 Shaft Straight Draw"
+          }
+        ],
+        "bmpUrl": "/api/static/orders/ORD-529117/jacquard.bmp",
+        "punchCardPreview": [
+          {
+            "pick": "Pick 001",
+            "bits": "000000000000000000000000"
+          },
+          {
+            "pick": "Pick 002",
+            "bits": "000000000000000000000000"
+          },
+          {
+            "pick": "Pick 003",
+            "bits": "000000000000000000000000"
+          },
+          {
+            "pick": "Pick 004",
+            "bits": "000000000000000000000000"
+          },
+          {
+            "pick": "Pick 005",
+            "bits": "000000000000000000000000"
+          },
+          {
+            "pick": "Pick 006",
+            "bits": "000000000000000000000000"
+          },
+          {
+            "pick": "Pick 007",
+            "bits": "011111111111111111111110"
+          },
+          {
+            "pick": "Pick 008",
+            "bits": "000000000000000000000000"
+          },
+          {
+            "pick": "Pick 009",
+            "bits": "000000000000000000000000"
+          },
+          {
+            "pick": "Pick 010",
+            "bits": "011111111111111111111110"
+          }
+        ],
+        "files": [
+          {
+            "label": "Lift Plan (.dob)",
+            "url": "/api/static/orders/ORD-529117/dobby_lift.dob",
+            "filename": "dobby_lift.dob"
+          },
+          {
+            "label": "Draw Plan (.txt)",
+            "url": "/api/static/orders/ORD-529117/dobby_draft.txt",
+            "filename": "dobby_draft.txt"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "ORD-138024",
+    "batchId": "FS-2026-07-22-205608",
+    "design": {
+      "id": "FS-2026-07-22-205608-001",
+      "name": "Fusion Design P1-B1-B1",
+      "image": "/api/static/batches/FS-2026-07-22-205608/design_0_wearable.png",
+      "templateImage": "/api/static/batches/FS-2026-07-22-205608/design_0_template.png",
+      "tags": [
+        "P1",
+        "B1",
+        "B1"
+      ],
+      "matchPercent": "78% match"
+    },
+    "materialName": "Organza Silk",
+    "price": 1500,
+    "customerName": "Sri Devaki",
+    "quantity": 19,
+    "status": "Jacquard Card Generated",
+    "createdOn": "22 Jul 2026, 09:55 PM",
+    "jacquardCardUrl": "/api/static/orders/ORD-138024/jacquard.bmp",
+    "jacquardTxtUrl": "/api/static/orders/ORD-138024/jacquard_cards.txt",
+    "hookSize": 200,
+    "totalCards": 100,
+    "yarnColors": {
+      "pallu": {
+        "hex": "#BA5C31",
+        "name": "Copper Zari",
+        "role": "Pallu Silk (Weft)"
+      },
+      "border": {
+        "hex": "#806660",
+        "name": "Copper Zari",
+        "role": "Border Zari (Weft)"
+      },
+      "body": {
+        "hex": "#230408",
+        "name": "Charcoal Black",
+        "role": "Saree Body (Warp)"
+      }
+    },
+    "loomOutputs": {
+      "traditional": {
+        "name": "Traditional Jacquard Loom",
+        "format": "Card Punch Matrix (.txt/.bmp)",
+        "stats": [
+          {
+            "label": "Warp Hooks",
+            "value": "200"
+          },
+          {
+            "label": "Picks/Cards",
+            "value": "100"
+          },
+          {
+            "label": "Controller",
+            "value": "Manual Punch Cards"
+          }
+        ],
+        "bmpUrl": "/api/static/orders/ORD-138024/jacquard.bmp",
+        "files": [
+          {
+            "label": "Download Loom BMP",
+            "url": "/api/static/orders/ORD-138024/jacquard.bmp",
+            "filename": "jacquard.bmp"
+          },
+          {
+            "label": "Download Cards TXT",
+            "url": "/api/static/orders/ORD-138024/jacquard_cards.txt",
+            "filename": "jacquard_cards.txt"
+          }
+        ]
+      },
+      "digital": {
+        "name": "Modern Digital Jacquard",
+        "format": "Staubli JC5 / WIF Data",
+        "stats": [
+          {
+            "label": "Electronic Hooks",
+            "value": "200"
+          },
+          {
+            "label": "Weft Picks",
+            "value": "100"
+          },
+          {
+            "label": "Standard format",
+            "value": "Staubli JC5 / WIF"
+          }
+        ],
+        "bmpUrl": "/api/static/orders/ORD-138024/jacquard.bmp",
+        "files": [
+          {
+            "label": "Staubli File (.jac)",
+            "url": "/api/static/orders/ORD-138024/digital_pattern.jac",
+            "filename": "digital_pattern.jac"
+          },
+          {
+            "label": "Loom Tie-Up (.wif)",
+            "url": "/api/static/orders/ORD-138024/digital_tieup.wif",
+            "filename": "digital_tieup.wif"
+          }
+        ]
+      },
+      "dobby": {
+        "name": "Harness Dobby Loom",
+        "format": "Lift & Draw Plan (.dob/.txt)",
+        "stats": [
+          {
+            "label": "Harnesses",
+            "value": "24"
+          },
+          {
+            "label": "Total Picks",
+            "value": "100"
+          },
+          {
+            "label": "Draft Rule",
+            "value": "24 Shaft Straight Draw"
+          }
+        ],
+        "bmpUrl": "/api/static/orders/ORD-138024/jacquard.bmp",
+        "files": [
+          {
+            "label": "Lift Plan (.dob)",
+            "url": "/api/static/orders/ORD-138024/dobby_lift.dob",
+            "filename": "dobby_lift.dob"
+          },
+          {
+            "label": "Draw Plan (.txt)",
+            "url": "/api/static/orders/ORD-138024/dobby_draft.txt",
+            "filename": "dobby_draft.txt"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "ORD-604685",
+    "batchId": "FS-2026-07-22-205608",
+    "design": {
+      "id": "FS-2026-07-22-205608-001",
+      "name": "Fusion Design P1-B1-B1",
+      "image": "/api/static/batches/FS-2026-07-22-205608/design_0_wearable.png",
+      "templateImage": "/api/static/batches/FS-2026-07-22-205608/design_0_template.png",
+      "tags": [
+        "P1",
+        "B1",
+        "B1"
+      ],
+      "matchPercent": "78% match"
+    },
+    "materialName": "Banarasi Silk",
+    "price": 4235,
+    "customerName": "Sri Devaki",
+    "quantity": 4,
+    "status": "Jacquard Card Generated",
+    "createdOn": "22 Jul 2026, 09:50 PM",
+    "jacquardCardUrl": "/api/static/orders/ORD-604685/jacquard.bmp",
+    "jacquardTxtUrl": "/api/static/orders/ORD-604685/jacquard_cards.txt",
+    "hookSize": 200,
+    "totalCards": 100,
+    "yarnColors": {
+      "pallu": {
+        "hex": "#BA5C31",
+        "name": "Copper Zari",
+        "role": "Pallu Silk (Weft)"
+      },
+      "border": {
+        "hex": "#806660",
+        "name": "Copper Zari",
+        "role": "Border Zari (Weft)"
+      },
+      "body": {
+        "hex": "#230408",
+        "name": "Charcoal Black",
+        "role": "Saree Body (Warp)"
+      }
+    },
+    "loomOutputs": {
+      "traditional": {
+        "name": "Traditional Jacquard Loom",
+        "format": "Card Punch Matrix (.txt/.bmp)",
+        "stats": [
+          {
+            "label": "Warp Hooks",
+            "value": "200"
+          },
+          {
+            "label": "Picks/Cards",
+            "value": "100"
+          },
+          {
+            "label": "Controller",
+            "value": "Manual Punch Cards"
+          }
+        ],
+        "bmpUrl": "/api/static/orders/ORD-604685/jacquard.bmp",
+        "files": [
+          {
+            "label": "Download Loom BMP",
+            "url": "/api/static/orders/ORD-604685/jacquard.bmp",
+            "filename": "jacquard.bmp"
+          },
+          {
+            "label": "Download Cards TXT",
+            "url": "/api/static/orders/ORD-604685/jacquard_cards.txt",
+            "filename": "jacquard_cards.txt"
+          }
+        ]
+      },
+      "digital": {
+        "name": "Modern Digital Jacquard",
+        "format": "Staubli JC5 / WIF Data",
+        "stats": [
+          {
+            "label": "Electronic Hooks",
+            "value": "200"
+          },
+          {
+            "label": "Weft Picks",
+            "value": "100"
+          },
+          {
+            "label": "Standard format",
+            "value": "Staubli JC5 / WIF"
+          }
+        ],
+        "bmpUrl": "/api/static/orders/ORD-604685/jacquard.bmp",
+        "files": [
+          {
+            "label": "Staubli File (.jac)",
+            "url": "/api/static/orders/ORD-604685/digital_pattern.jac",
+            "filename": "digital_pattern.jac"
+          },
+          {
+            "label": "Loom Tie-Up (.wif)",
+            "url": "/api/static/orders/ORD-604685/digital_tieup.wif",
+            "filename": "digital_tieup.wif"
+          }
+        ]
+      },
+      "dobby": {
+        "name": "Harness Dobby Loom",
+        "format": "Lift & Draw Plan (.dob/.txt)",
+        "stats": [
+          {
+            "label": "Harnesses",
+            "value": "24"
+          },
+          {
+            "label": "Total Picks",
+            "value": "100"
+          },
+          {
+            "label": "Draft Rule",
+            "value": "24 Shaft Straight Draw"
+          }
+        ],
+        "bmpUrl": "/api/static/orders/ORD-604685/jacquard.bmp",
+        "files": [
+          {
+            "label": "Lift Plan (.dob)",
+            "url": "/api/static/orders/ORD-604685/dobby_lift.dob",
+            "filename": "dobby_lift.dob"
+          },
+          {
+            "label": "Draw Plan (.txt)",
+            "url": "/api/static/orders/ORD-604685/dobby_draft.txt",
+            "filename": "dobby_draft.txt"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "ORD-415890",
+    "batchId": "FS-2026-07-22-205608",
+    "design": {
+      "id": "FS-2026-07-22-205608-001",
+      "name": "Fusion Design P1-B1-B1",
+      "image": "/api/static/batches/FS-2026-07-22-205608/design_0_wearable.png",
+      "templateImage": "/api/static/batches/FS-2026-07-22-205608/design_0_template.png",
+      "tags": [
+        "P1",
+        "B1",
+        "B1"
+      ],
+      "matchPercent": "78% match"
+    },
+    "materialName": "Banarasi Silk",
+    "price": 4235,
+    "customerName": "Sri Devaki",
+    "quantity": 7,
+    "status": "Jacquard Card Generated",
+    "createdOn": "22 Jul 2026, 09:26 PM",
+    "jacquardCardUrl": "/api/static/orders/ORD-415890/jacquard.bmp",
+    "jacquardTxtUrl": "/api/static/orders/ORD-415890/jacquard_cards.txt",
+    "hookSize": 200,
+    "totalCards": 100,
+    "yarnColors": {
+      "pallu": {
+        "hex": "#BA5C31",
+        "name": "Copper Zari",
+        "role": "Pallu Silk (Weft)"
+      },
+      "border": {
+        "hex": "#806660",
+        "name": "Copper Zari",
+        "role": "Border Zari (Weft)"
+      },
+      "body": {
+        "hex": "#230408",
+        "name": "Charcoal Black",
+        "role": "Saree Body (Warp)"
+      }
+    },
+    "loomOutputs": {
+      "traditional": {
+        "name": "Traditional Jacquard Loom",
+        "format": "Card Punch Matrix (.txt/.bmp)",
+        "stats": [
+          {
+            "label": "Warp Hooks",
+            "value": "200"
+          },
+          {
+            "label": "Picks/Cards",
+            "value": "100"
+          },
+          {
+            "label": "Controller",
+            "value": "Manual Punch Cards"
+          }
+        ],
+        "bmpUrl": "/api/static/orders/ORD-415890/jacquard.bmp",
+        "files": [
+          {
+            "label": "Download Loom BMP",
+            "url": "/api/static/orders/ORD-415890/jacquard.bmp",
+            "filename": "jacquard.bmp"
+          },
+          {
+            "label": "Download Cards TXT",
+            "url": "/api/static/orders/ORD-415890/jacquard_cards.txt",
+            "filename": "jacquard_cards.txt"
+          }
+        ]
+      },
+      "digital": {
+        "name": "Modern Digital Jacquard",
+        "format": "Staubli JC5 / WIF Data",
+        "stats": [
+          {
+            "label": "Electronic Hooks",
+            "value": "200"
+          },
+          {
+            "label": "Weft Picks",
+            "value": "100"
+          },
+          {
+            "label": "Standard format",
+            "value": "Staubli JC5 / WIF"
+          }
+        ],
+        "bmpUrl": "/api/static/orders/ORD-415890/jacquard.bmp",
+        "files": [
+          {
+            "label": "Staubli File (.jac)",
+            "url": "/api/static/orders/ORD-415890/digital_pattern.jac",
+            "filename": "digital_pattern.jac"
+          },
+          {
+            "label": "Loom Tie-Up (.wif)",
+            "url": "/api/static/orders/ORD-415890/digital_tieup.wif",
+            "filename": "digital_tieup.wif"
+          }
+        ]
+      },
+      "dobby": {
+        "name": "Harness Dobby Loom",
+        "format": "Lift & Draw Plan (.dob/.txt)",
+        "stats": [
+          {
+            "label": "Harnesses",
+            "value": "24"
+          },
+          {
+            "label": "Total Picks",
+            "value": "100"
+          },
+          {
+            "label": "Draft Rule",
+            "value": "24 Shaft Straight Draw"
+          }
+        ],
+        "bmpUrl": "/api/static/orders/ORD-415890/jacquard.bmp",
+        "files": [
+          {
+            "label": "Lift Plan (.dob)",
+            "url": "/api/static/orders/ORD-415890/dobby_lift.dob",
+            "filename": "dobby_lift.dob"
+          },
+          {
+            "label": "Draw Plan (.txt)",
+            "url": "/api/static/orders/ORD-415890/dobby_draft.txt",
+            "filename": "dobby_draft.txt"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "ORD-707703",
+    "batchId": "FS-2026-07-22-205608",
+    "design": {
+      "id": "FS-2026-07-22-205608-001",
+      "name": "Fusion Design P1-B1-B1",
+      "image": "/api/static/batches/FS-2026-07-22-205608/design_0_wearable.png",
+      "templateImage": "/api/static/batches/FS-2026-07-22-205608/design_0_template.png",
+      "tags": [
+        "P1",
+        "B1",
+        "B1"
+      ],
+      "matchPercent": "78% match"
+    },
+    "materialName": "Banarasi Silk",
+    "price": 4235,
+    "customerName": "Sri Devaki",
+    "quantity": 1,
+    "status": "Jacquard Card Generated",
+    "createdOn": "22 Jul 2026, 09:26 PM",
+    "jacquardCardUrl": "/api/static/orders/ORD-707703/jacquard.bmp",
+    "jacquardTxtUrl": "/api/static/orders/ORD-707703/jacquard_cards.txt",
+    "hookSize": 200,
+    "totalCards": 100,
+    "yarnColors": {
+      "pallu": {
+        "hex": "#BA5C31",
+        "name": "Copper Zari",
+        "role": "Pallu Silk (Weft)"
+      },
+      "border": {
+        "hex": "#806660",
+        "name": "Copper Zari",
+        "role": "Border Zari (Weft)"
+      },
+      "body": {
+        "hex": "#230408",
+        "name": "Charcoal Black",
+        "role": "Saree Body (Warp)"
+      }
+    },
+    "loomOutputs": {
+      "traditional": {
+        "name": "Traditional Jacquard Loom",
+        "format": "Card Punch Matrix (.txt/.bmp)",
+        "stats": [
+          {
+            "label": "Warp Hooks",
+            "value": "200"
+          },
+          {
+            "label": "Picks/Cards",
+            "value": "100"
+          },
+          {
+            "label": "Controller",
+            "value": "Manual Punch Cards"
+          }
+        ],
+        "bmpUrl": "/api/static/orders/ORD-707703/jacquard.bmp",
+        "punchCardPreview": [
+          {
+            "card": "Card 001",
+            "bits": "000000000000000000000000...",
+            "r": "0",
+            "g": "0",
+            "b": "0",
+            "colorName": "Charcoal Black",
+            "colorHex": "#000000"
+          },
+          {
+            "card": "Card 002",
+            "bits": "000000000000000000000000...",
+            "r": "0",
+            "g": "0",
+            "b": "0",
+            "colorName": "Charcoal Black",
+            "colorHex": "#000000"
+          },
+          {
+            "card": "Card 003",
+            "bits": "000000000000000000000000...",
+            "r": "0",
+            "g": "0",
+            "b": "0",
+            "colorName": "Charcoal Black",
+            "colorHex": "#000000"
+          },
+          {
+            "card": "Card 004",
+            "bits": "000000000000000000000000...",
+            "r": "0",
+            "g": "0",
+            "b": "0",
+            "colorName": "Charcoal Black",
+            "colorHex": "#000000"
+          },
+          {
+            "card": "Card 005",
+            "bits": "000000000000000000000000...",
+            "r": "0",
+            "g": "0",
+            "b": "0",
+            "colorName": "Charcoal Black",
+            "colorHex": "#383030"
+          },
+          {
+            "card": "Card 006",
+            "bits": "000100001100011000011000...",
+            "r": "1",
+            "g": "1",
+            "b": "1",
+            "colorName": "Silver Thread",
+            "colorHex": "#bcafac"
+          },
+          {
+            "card": "Card 007",
+            "bits": "000100001100011000011000...",
+            "r": "1",
+            "g": "1",
+            "b": "1",
+            "colorName": "Silver Thread",
+            "colorHex": "#b8aca8"
+          },
+          {
+            "card": "Card 008",
+            "bits": "000100001100011000011000...",
+            "r": "1",
+            "g": "1",
+            "b": "1",
+            "colorName": "Silver Thread",
+            "colorHex": "#b5a8a6"
+          },
+          {
+            "card": "Card 009",
+            "bits": "000100001100011000011000...",
+            "r": "1",
+            "g": "1",
+            "b": "1",
+            "colorName": "Silver Thread",
+            "colorHex": "#b1a4a2"
+          },
+          {
+            "card": "Card 010",
+            "bits": "000100001100011000011000...",
+            "r": "1",
+            "g": "1",
+            "b": "1",
+            "colorName": "Silver Thread",
+            "colorHex": "#b2a7a5"
+          }
+        ],
+        "files": [
+          {
+            "label": "Download Loom BMP",
+            "url": "/api/static/orders/ORD-707703/jacquard.bmp",
+            "filename": "jacquard.bmp"
+          },
+          {
+            "label": "Download Cards TXT",
+            "url": "/api/static/orders/ORD-707703/jacquard_cards.txt",
+            "filename": "jacquard_cards.txt"
+          }
+        ]
+      },
+      "digital": {
+        "name": "Modern Digital Jacquard",
+        "format": "Staubli JC5 / WIF Data",
+        "stats": [
+          {
+            "label": "Electronic Hooks",
+            "value": "200"
+          },
+          {
+            "label": "Weft Picks",
+            "value": "100"
+          },
+          {
+            "label": "Standard format",
+            "value": "Staubli JC5 / WIF"
+          }
+        ],
+        "bmpUrl": "/api/static/orders/ORD-707703/jacquard.bmp",
+        "files": [
+          {
+            "label": "Staubli File (.jac)",
+            "url": "/api/static/orders/ORD-707703/digital_pattern.jac",
+            "filename": "digital_pattern.jac"
+          },
+          {
+            "label": "Loom Tie-Up (.wif)",
+            "url": "/api/static/orders/ORD-707703/digital_tieup.wif",
+            "filename": "digital_tieup.wif"
+          }
+        ]
+      },
+      "dobby": {
+        "name": "Harness Dobby Loom",
+        "format": "Lift & Draw Plan (.dob/.txt)",
+        "stats": [
+          {
+            "label": "Harnesses",
+            "value": "24"
+          },
+          {
+            "label": "Total Picks",
+            "value": "100"
+          },
+          {
+            "label": "Draft Rule",
+            "value": "24 Shaft Straight Draw"
+          }
+        ],
+        "bmpUrl": "/api/static/orders/ORD-707703/jacquard.bmp",
+        "punchCardPreview": [
+          {
+            "pick": "Pick 001",
+            "bits": "000000000000000000000000"
+          },
+          {
+            "pick": "Pick 002",
+            "bits": "000000000000000000000000"
+          },
+          {
+            "pick": "Pick 003",
+            "bits": "000000000000000000000000"
+          },
+          {
+            "pick": "Pick 004",
+            "bits": "000000000000000000000000"
+          },
+          {
+            "pick": "Pick 005",
+            "bits": "000000000000000000000000"
+          },
+          {
+            "pick": "Pick 006",
+            "bits": "000000000010101010101010"
+          },
+          {
+            "pick": "Pick 007",
+            "bits": "000000000000000000000000"
+          },
+          {
+            "pick": "Pick 008",
+            "bits": "000000000000000000000000"
+          },
+          {
+            "pick": "Pick 009",
+            "bits": "000000000000000000100010"
+          },
+          {
+            "pick": "Pick 010",
+            "bits": "000000000000001010101010"
+          }
+        ],
+        "files": [
+          {
+            "label": "Lift Plan (.dob)",
+            "url": "/api/static/orders/ORD-707703/dobby_lift.dob",
+            "filename": "dobby_lift.dob"
+          },
+          {
+            "label": "Draw Plan (.txt)",
+            "url": "/api/static/orders/ORD-707703/dobby_draft.txt",
+            "filename": "dobby_draft.txt"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "ORD-285919",
+    "batchId": "FS-2026-07-22-205608",
+    "design": {
+      "id": "FS-2026-07-22-205608-001",
+      "name": "Fusion Design P1-B1-B1",
+      "image": "/api/static/batches/FS-2026-07-22-205608/design_0_wearable.png",
+      "templateImage": "/api/static/batches/FS-2026-07-22-205608/design_0_template.png",
+      "tags": [
+        "P1",
+        "B1",
+        "B1"
+      ],
+      "matchPercent": "78% match"
+    },
+    "materialName": "Banarasi Silk",
+    "price": 4235,
+    "customerName": "Sri Devaki",
+    "quantity": 1,
+    "status": "Jacquard Card Generated",
+    "createdOn": "22 Jul 2026, 09:01 PM",
+    "jacquardCardUrl": "/api/static/orders/ORD-285919/jacquard.bmp",
+    "jacquardTxtUrl": "/api/static/orders/ORD-285919/jacquard_cards.txt",
+    "hookSize": 200,
+    "totalCards": 100
+  }
+]

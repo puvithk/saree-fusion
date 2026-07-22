@@ -7,6 +7,7 @@ import FusionResult from './pages/FusionResult';
 import DesignDetails from './pages/DesignDetails';
 import Sarees from './pages/Sarees';
 import Design from './pages/Design';
+import WeaverDashboard from './pages/WeaverDashboard';
 import './App.css';
 
 function App() {
@@ -22,6 +23,7 @@ function App() {
             <Route path="/collections/batch/:batchId/design/:designId" element={<DesignDetails />} />
             <Route path="/sarees" element={<Sarees />} />
             <Route path="/design" element={<Design />} />
+            <Route path="/weaver" element={<WeaverDashboard />} />
           </Routes>
         </main>
         <Footer />

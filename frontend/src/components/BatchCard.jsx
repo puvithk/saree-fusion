@@ -57,7 +57,7 @@ export default function BatchCard({ batch, index }) {
           </div>
         </div>
       ) : (
-        <Link to={`/collections/batch/${index}`} className="batch-view-btn">
+        <Link to={`/collections/batch/${batch.id || index}`} className="batch-view-btn">
           View all Designs
         </Link>
       )}

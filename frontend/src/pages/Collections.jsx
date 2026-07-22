@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BsGrid } from 'react-icons/bs';
 import { HiOutlineSparkles } from 'react-icons/hi';
 import { FiCheck } from 'react-icons/fi';
 import BatchCard from '../components/BatchCard';
 import sareesilhouette from '../assets/saree-silhouette.png';
-import { batches } from '../data/mockData';
+import { API_BASE_URL } from '../config';
 
 const FILTERS = [
   { key: 'all', label: 'ALL BATCH', icon: <BsGrid /> },
@@ -14,10 +14,31 @@ const FILTERS = [
 
 export default function Collections() {
   const [activeFilter, setActiveFilter] = useState('all');
+  const [batchesList, setBatchesList] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/api/batches`)
+      .then((res) => res.json())
+      .then((data) => {
+        const mappedData = data.map((b) => ({
+          ...b,
+          thumbnails: b.thumbnails.map((t) =>
+            t.startsWith('/api/') ? `${API_BASE_URL}${t}` : t
+          ),
+        }));
+        setBatchesList(mappedData);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error('Error fetching batches:', err);
+        setLoading(false);
+      });
+  }, []);
 
   const filtered = activeFilter === 'all'
-    ? batches
-    : batches.filter((b) => b.status === activeFilter);
+    ? batchesList
+    : batchesList.filter((b) => b.status === activeFilter);
 
   return (
     <div className="collections-page">
@@ -47,11 +68,17 @@ export default function Collections() {
         ))}
       </div>
 
-      <div className="batch-grid">
-        {filtered.map((batch, i) => (
-          <BatchCard key={i} batch={batch} index={i} />
-        ))}
-      </div>
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>
+          Loading your collections...
+        </div>
+      ) : (
+        <div className="batch-grid">
+          {filtered.map((batch, i) => (
+            <BatchCard key={batch.id || i} batch={batch} index={i} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

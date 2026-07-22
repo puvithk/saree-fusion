@@ -3,12 +3,46 @@ import { useNavigate } from 'react-router-dom';
 import { FiUploadCloud, FiX, FiImage } from 'react-icons/fi';
 import { HiOutlineSparkles } from 'react-icons/hi';
 import sareesilhouette from '../assets/saree-silhouette.png';
+import { API_BASE_URL } from '../config';
+
+import redSaree from '../assets/red-saree.png';
+import silkSaree from '../assets/silk-saree.png';
+import cottonSaree from '../assets/cotton-saree.png';
+import traditionalSaree from '../assets/traditional-saree.png';
+import bridalSaree from '../assets/bridal-saree.png';
 
 const COMPONENT_TYPES = [
   { key: 'pallu', label: 'Pallu Images', description: 'Upload pallu designs for your saree', maxFiles: 5 },
   { key: 'border', label: 'Border Images', description: 'Upload border patterns for your saree', maxFiles: 5 },
   { key: 'body', label: 'Body Images', description: 'Upload body fabric designs for your saree', maxFiles: 5 },
 ];
+
+const STYLES = {
+  normal: {
+    label: 'Normal Style',
+    models: [
+      { id: 'model_1', name: 'Model A (Classic Red)', image: redSaree },
+      { id: 'model_2', name: 'Model B (Silk Drape)', image: silkSaree },
+      { id: 'model_3', name: 'Model C (Cotton Drape)', image: cottonSaree },
+    ],
+  },
+  mysore: {
+    label: 'Mysore Style',
+    models: [
+      { id: 'model_1', name: 'Model A (Traditional)', image: traditionalSaree },
+      { id: 'model_2', name: 'Model B (Bridal Zari)', image: bridalSaree },
+      { id: 'model_3', name: 'Model C (Silk Drape)', image: silkSaree },
+    ],
+  },
+  kadagu: {
+    label: 'Kadagu Style',
+    models: [
+      { id: 'model_1', name: 'Model A (Cotton Drape)', image: cottonSaree },
+      { id: 'model_2', name: 'Model B (Traditional)', image: traditionalSaree },
+      { id: 'model_3', name: 'Model C (Bridal Zari)', image: bridalSaree },
+    ],
+  },
+};
 
 function UploadCard({ type, files, onFilesAdd, onFileRemove }) {
   const inputRef = useRef(null);
@@ -118,6 +152,14 @@ export default function Design() {
     body: [],
   });
   const [description, setDescription] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [selectedStyle, setSelectedStyle] = useState('normal'); // 'normal' | 'mysore' | 'kadagu'
+  const [selectedModel, setSelectedModel] = useState('model_1'); // 'model_1' | 'model_2' | 'model_3'
+
+  const handleStyleChange = (style) => {
+    setSelectedStyle(style);
+    setSelectedModel('model_1');
+  };
 
   const handleFilesAdd = (key, newFiles) => {
     const type = COMPONENT_TYPES.find((t) => t.key === key);
@@ -145,8 +187,35 @@ export default function Design() {
   const totalUploads = uploads.pallu.length + uploads.border.length + uploads.body.length;
   const canGenerate = uploads.pallu.length > 0 || uploads.border.length > 0;
 
-  const handleGenerate = () => {
-    navigate('/collections');
+  const handleGenerate = async () => {
+    if (!canGenerate || isGenerating) return;
+    setIsGenerating(true);
+    try {
+      const formData = new FormData();
+      uploads.pallu.forEach((item) => formData.append('pallu', item.file));
+      uploads.border.forEach((item) => formData.append('border', item.file));
+      uploads.body.forEach((item) => formData.append('body', item.file));
+      formData.append('description', description);
+      formData.append('style', selectedStyle);
+      formData.append('model', selectedModel);
+
+      const response = await fetch(`${API_BASE_URL}/api/generate`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate fusion design');
+      }
+
+      const data = await response.json();
+      navigate(`/collections/batch/${data.id}`);
+    } catch (err) {
+      console.error(err);
+      alert('Error generating design fusion. Please try again.');
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   return (
@@ -171,15 +240,15 @@ export default function Design() {
           <div className="step-number">1</div>
           <span className="step-label">Upload Components</span>
         </div>
-        <div className="step-connector" />
-        <div className="design-step">
+        <div className="step-connector active" />
+        <div className="design-step active">
           <div className="step-number">2</div>
-          <span className="step-label">Describe Design</span>
+          <span className="step-label">Select Style & Model</span>
         </div>
-        <div className="step-connector" />
-        <div className="design-step">
+        <div className="step-connector active" />
+        <div className="design-step active">
           <div className="step-number">3</div>
-          <span className="step-label">Generate Fusion</span>
+          <span className="step-label">Describe & Generate</span>
         </div>
       </div>
 
@@ -221,6 +290,43 @@ export default function Design() {
         </div>
       </div>
 
+      {/* Style & Model Selection Section */}
+      <div className="style-selection-section">
+        <h3 className="design-desc-title">Step 2: Select Saree Draping Style & Model</h3>
+        <p className="design-desc-hint" style={{ marginBottom: '16px' }}>Choose the style format (Kadagu, Mysore, Normal) and target silhouette model</p>
+        
+        <div className="style-tabs">
+          {Object.entries(STYLES).map(([key, styleObj]) => (
+            <button
+              key={key}
+              type="button"
+              className={`style-tab-btn ${selectedStyle === key ? 'active' : ''}`}
+              onClick={() => handleStyleChange(key)}
+            >
+              {styleObj.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="model-grid">
+          {STYLES[selectedStyle].models.map((model) => (
+            <div
+              key={model.id}
+              className={`model-card ${selectedModel === model.id ? 'active' : ''}`}
+              onClick={() => setSelectedModel(model.id)}
+            >
+              <div className="model-img-wrapper">
+                <img src={model.image} alt={model.name} className="model-preview-img" />
+                {selectedModel === model.id && (
+                  <div className="model-selected-badge">Selected</div>
+                )}
+              </div>
+              <span className="model-name">{model.name}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Description */}
       <div className="design-description-section">
         <h3 className="design-desc-title">Design Description</h3>
@@ -237,11 +343,11 @@ export default function Design() {
       {/* Generate Button */}
       <div className="design-generate-section">
         <button
-          className={`generate-fusion-btn ${!canGenerate ? 'disabled' : ''}`}
+          className={`generate-fusion-btn ${(!canGenerate || isGenerating) ? 'disabled' : ''}`}
           onClick={handleGenerate}
-          disabled={!canGenerate}
+          disabled={!canGenerate || isGenerating}
         >
-          <HiOutlineSparkles /> Generate Fusion
+          <HiOutlineSparkles /> {isGenerating ? 'Generating...' : 'Generate Fusion'}
         </button>
         {!canGenerate && (
           <p className="generate-hint">Upload at least one Pallu or Border image to generate</p>

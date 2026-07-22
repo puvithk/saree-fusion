@@ -9,22 +9,56 @@ export default function WeaverDashboard() {
   const [generatingId, setGeneratingId] = useState(null);
   const [selectedLoom, setSelectedLoom] = useState({}); // orderId -> 'traditional' | 'digital' | 'dobby'
 
+  const mapLoomOutputs = (outputs) => {
+    if (!outputs) return null;
+    const mapped = {};
+    for (const key of Object.keys(outputs)) {
+      const loom = outputs[key];
+      mapped[key] = {
+        ...loom,
+        bmpUrl: loom.bmpUrl && loom.bmpUrl.startsWith('/api/') ? `${API_BASE_URL}${loom.bmpUrl}` : loom.bmpUrl,
+        files: loom.files ? loom.files.map(f => ({
+          ...f,
+          url: f.url && f.url.startsWith('/api/') ? `${API_BASE_URL}${f.url}` : f.url
+        })) : []
+      };
+    }
+    return mapped;
+  };
+
   const fetchOrders = () => {
     fetch(`${API_BASE_URL}/api/orders`)
       .then((res) => res.json())
       .then((data) => {
-        // Map images to backend URLs
-        const mappedData = data.map((o) => {
+        let localOrders = [];
+        try {
+          localOrders = JSON.parse(localStorage.getItem('sareefusion_orders') || '[]');
+        } catch (e) {
+          console.error(e);
+        }
+
+        const combined = [...localOrders, ...data];
+        const uniqueOrders = [];
+        const seenIds = new Set();
+        for (const order of combined) {
+          if (!seenIds.has(order.id)) {
+            seenIds.add(order.id);
+            uniqueOrders.push(order);
+          }
+        }
+
+        const mappedData = uniqueOrders.map((o) => {
           const design = o.design;
           return {
             ...o,
             design: {
               ...design,
-              image: design.image.startsWith('/api/') ? `${API_BASE_URL}${design.image}` : design.image,
-              templateImage: design.templateImage.startsWith('/api/') ? `${API_BASE_URL}${design.templateImage}` : design.templateImage,
+              image: design.image && design.image.startsWith('/api/') ? `${API_BASE_URL}${design.image}` : design.image,
+              templateImage: design.templateImage && design.templateImage.startsWith('/api/') ? `${API_BASE_URL}${design.templateImage}` : design.templateImage,
             },
-            jacquardCardUrl: o.jacquardCardUrl ? `${API_BASE_URL}${o.jacquardCardUrl}` : null,
-            jacquardTxtUrl: o.jacquardTxtUrl ? `${API_BASE_URL}${o.jacquardTxtUrl}` : null,
+            jacquardCardUrl: o.jacquardCardUrl ? (o.jacquardCardUrl.startsWith('/api/') ? `${API_BASE_URL}${o.jacquardCardUrl}` : o.jacquardCardUrl) : null,
+            jacquardTxtUrl: o.jacquardTxtUrl ? (o.jacquardTxtUrl.startsWith('/api/') ? `${API_BASE_URL}${o.jacquardTxtUrl}` : o.jacquardTxtUrl) : null,
+            loomOutputs: o.loomOutputs ? mapLoomOutputs(o.loomOutputs) : null
           };
         });
         setOrders(mappedData);
@@ -32,6 +66,26 @@ export default function WeaverDashboard() {
       })
       .catch((err) => {
         console.error('Error fetching orders:', err);
+        let localOrders = [];
+        try {
+          localOrders = JSON.parse(localStorage.getItem('sareefusion_orders') || '[]');
+        } catch (e) {}
+        
+        const mappedData = localOrders.map((o) => {
+          const design = o.design;
+          return {
+            ...o,
+            design: {
+              ...design,
+              image: design.image && design.image.startsWith('/api/') ? `${API_BASE_URL}${design.image}` : design.image,
+              templateImage: design.templateImage && design.templateImage.startsWith('/api/') ? `${API_BASE_URL}${design.templateImage}` : design.templateImage,
+            },
+            jacquardCardUrl: o.jacquardCardUrl ? (o.jacquardCardUrl.startsWith('/api/') ? `${API_BASE_URL}${o.jacquardCardUrl}` : o.jacquardCardUrl) : null,
+            jacquardTxtUrl: o.jacquardTxtUrl ? (o.jacquardTxtUrl.startsWith('/api/') ? `${API_BASE_URL}${o.jacquardTxtUrl}` : o.jacquardTxtUrl) : null,
+            loomOutputs: o.loomOutputs ? mapLoomOutputs(o.loomOutputs) : null
+          };
+        });
+        setOrders(mappedData);
         setLoading(false);
       });
   };
@@ -43,13 +97,45 @@ export default function WeaverDashboard() {
   const handleGenerateJacquard = async (orderId) => {
     setGeneratingId(orderId);
     try {
+      const targetOrder = orders.find(o => o.id === orderId);
+      if (!targetOrder) {
+        throw new Error('Order not found');
+      }
+
       const response = await fetch(`${API_BASE_URL}/api/orders/${orderId}/generate-jacquard`, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          templateImage: targetOrder.design.templateImage,
+          design: targetOrder.design,
+        }),
       });
+
       if (!response.ok) {
         throw new Error('Failed to generate Jacquard cards');
       }
-      fetchOrders(); // Refresh order details
+
+      const updatedOrder = await response.json();
+
+      try {
+        const localOrders = JSON.parse(localStorage.getItem('sareefusion_orders') || '[]');
+        const index = localOrders.findIndex(o => o.id === orderId);
+        if (index !== -1) {
+          localOrders[index] = {
+            ...localOrders[index],
+            ...updatedOrder
+          };
+        } else {
+          localOrders.push(updatedOrder);
+        }
+        localStorage.setItem('sareefusion_orders', JSON.stringify(localOrders));
+      } catch (e) {
+        console.error(e);
+      }
+
+      fetchOrders();
     } catch (err) {
       console.error(err);
       alert('Failed to generate Jacquard loom pattern.');
@@ -61,17 +147,22 @@ export default function WeaverDashboard() {
   const handleDeleteOrder = async (orderId) => {
     if (!confirm('Are you sure you want to delete this order?')) return;
     try {
-      const response = await fetch(`${API_BASE_URL}/api/orders/${orderId}`, {
+      await fetch(`${API_BASE_URL}/api/orders/${orderId}`, {
         method: 'DELETE',
       });
-      if (!response.ok) {
-        throw new Error('Failed to delete order');
-      }
-      fetchOrders(); // Refresh orders
     } catch (err) {
       console.error(err);
-      alert('Failed to delete order.');
     }
+    
+    try {
+      const localOrders = JSON.parse(localStorage.getItem('sareefusion_orders') || '[]');
+      const updated = localOrders.filter(o => o.id !== orderId);
+      localStorage.setItem('sareefusion_orders', JSON.stringify(updated));
+    } catch (e) {
+      console.error(e);
+    }
+    
+    fetchOrders();
   };
 
   return (

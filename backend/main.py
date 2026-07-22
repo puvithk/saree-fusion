@@ -762,14 +762,49 @@ def run_jacquard(order_id):
             target_order = o
             break
             
-    if not target_order:
-        return jsonify({"error": "Order not found"}), 404
-        
-    # Get local path of design template
-    design = target_order["design"]
-    template_url = design.get("templateImage", "")
+    req_data = request.get_json(silent=True) or {}
     
-    relative_path = template_url.replace("/api/static/", "")
+    if not target_order:
+        # If the order is not found in the ephemeral server container, reconstruct it from client data
+        design = req_data.get("design", {})
+        template_url = req_data.get("templateImage", design.get("templateImage", ""))
+        target_order = {
+            "id": order_id,
+            "batchId": req_data.get("batchId", "unknown"),
+            "design": design,
+            "materialName": req_data.get("materialName", "Silk"),
+            "price": req_data.get("price", 0),
+            "customerName": req_data.get("customerName", "Guest"),
+            "quantity": req_data.get("quantity", 1),
+            "status": "Pending",
+            "createdOn": datetime.now().strftime("%d %b %Y, %I:%M %p"),
+            "jacquardCardUrl": None,
+            "jacquardTxtUrl": None,
+            "hookSize": 200,
+            "totalCards": 100,
+        }
+        orders.append(target_order)
+    else:
+        design = target_order.get("design", {})
+        template_url = req_data.get("templateImage", design.get("templateImage", ""))
+        
+    if not template_url:
+        template_url = ""
+        
+    # Safe parsing of template URL to relative filesystem path
+    if "://" in template_url:
+        parts = template_url.split("/api/static/")
+        if len(parts) > 1:
+            relative_path = parts[1]
+        else:
+            parts_static = template_url.split("/static/")
+            if len(parts_static) > 1:
+                relative_path = parts_static[1]
+            else:
+                relative_path = template_url
+    else:
+        relative_path = template_url.replace("/api/static/", "")
+        
     local_path = os.path.join(STATIC_DIR, relative_path)
     
     if not os.path.exists(local_path):

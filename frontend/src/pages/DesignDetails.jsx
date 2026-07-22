@@ -26,9 +26,11 @@ export default function DesignDetails() {
 
   const calculateTotal = () => {
     if (!design) return '0';
-    const rawPrice = materials[selectedMaterial].price.replace(/,/g, '');
-    const priceNum = parseFloat(rawPrice) || 0;
-    const total = priceNum * quantity;
+    const priceVal = materials[selectedMaterial].price;
+    const priceNum = typeof priceVal === 'string' 
+      ? parseFloat(priceVal.replace(/,/g, '')) 
+      : parseFloat(priceVal);
+    const total = (priceNum || 0) * quantity;
     return total.toLocaleString('en-IN');
   };
 
@@ -344,7 +346,15 @@ export default function DesignDetails() {
                 <span>Quantity Ordered:</span> <strong>{orderData?.quantity} Saree{orderData?.quantity > 1 ? 's' : ''}</strong>
               </div>
               <div className="modal-detail-item" style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '10px', marginTop: '10px' }}>
-                <span>Total Bill Amount:</span> <strong style={{ color: '#00e673', fontSize: '1.2rem' }}>₹{((parseFloat(orderData?.price?.replace(/,/g, '')) || 0) * (orderData?.quantity || 1)).toLocaleString('en-IN')}</strong>
+                <span>Total Bill Amount:</span> <strong style={{ color: '#00e673', fontSize: '1.2rem' }}>
+                  ₹{(() => {
+                    const priceVal = orderData?.price;
+                    const priceNum = typeof priceVal === 'string'
+                      ? parseFloat(priceVal.replace(/,/g, ''))
+                      : parseFloat(priceVal);
+                    return ((priceNum || 0) * (orderData?.quantity || 1)).toLocaleString('en-IN');
+                  })()}
+                </strong>
               </div>
             </div>
             <p className="modal-note">

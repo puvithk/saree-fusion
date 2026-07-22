@@ -13,16 +13,56 @@ app = Flask(__name__)
 # Enable CORS for all routes to handle requests from the React frontend port
 CORS(app)
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-STATIC_DIR = os.path.join(BASE_DIR, "static")
-BATCHES_DIR = os.path.join(STATIC_DIR, "batches")
-ASSETS_DIR = os.path.join(STATIC_DIR, "assets")
-BATCHES_JSON = os.path.join(BASE_DIR, "batches.json")
+ON_VERCEL = os.environ.get('VERCEL') is not None
 
-# Ensure directories exist
-os.makedirs(STATIC_DIR, exist_ok=True)
-os.makedirs(BATCHES_DIR, exist_ok=True)
-os.makedirs(ASSETS_DIR, exist_ok=True)
+if ON_VERCEL:
+    BASE_DIR = "/tmp"
+    STATIC_DIR = os.path.join(BASE_DIR, "static")
+    BATCHES_DIR = os.path.join(STATIC_DIR, "batches")
+    ASSETS_DIR = os.path.join(STATIC_DIR, "assets")
+    ORDERS_DIR = os.path.join(STATIC_DIR, "orders")
+    BATCHES_JSON = os.path.join(BASE_DIR, "batches.json")
+    ORDERS_JSON = os.path.join(BASE_DIR, "orders.json")
+    
+    SRC_DIR = os.path.dirname(os.path.abspath(__file__))
+    SRC_STATIC = os.path.join(SRC_DIR, "static")
+    
+    os.makedirs(STATIC_DIR, exist_ok=True)
+    os.makedirs(BATCHES_DIR, exist_ok=True)
+    os.makedirs(ASSETS_DIR, exist_ok=True)
+    os.makedirs(ORDERS_DIR, exist_ok=True)
+    
+    src_assets = os.path.join(SRC_STATIC, "assets")
+    if os.path.exists(src_assets):
+        for item in os.listdir(src_assets):
+            s = os.path.join(src_assets, item)
+            d = os.path.join(ASSETS_DIR, item)
+            if not os.path.exists(d):
+                if os.path.isdir(s):
+                    shutil.copytree(s, d)
+                else:
+                    shutil.copy2(s, d)
+                    
+    src_batches = os.path.join(SRC_DIR, "batches.json")
+    if os.path.exists(src_batches) and not os.path.exists(BATCHES_JSON):
+        shutil.copy2(src_batches, BATCHES_JSON)
+        
+    src_orders = os.path.join(SRC_DIR, "orders.json")
+    if os.path.exists(src_orders) and not os.path.exists(ORDERS_JSON):
+        shutil.copy2(src_orders, ORDERS_JSON)
+else:
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    STATIC_DIR = os.path.join(BASE_DIR, "static")
+    BATCHES_DIR = os.path.join(STATIC_DIR, "batches")
+    ASSETS_DIR = os.path.join(STATIC_DIR, "assets")
+    ORDERS_DIR = os.path.join(STATIC_DIR, "orders")
+    BATCHES_JSON = os.path.join(BASE_DIR, "batches.json")
+    ORDERS_JSON = os.path.join(BASE_DIR, "orders.json")
+    
+    os.makedirs(STATIC_DIR, exist_ok=True)
+    os.makedirs(BATCHES_DIR, exist_ok=True)
+    os.makedirs(ASSETS_DIR, exist_ok=True)
+    os.makedirs(ORDERS_DIR, exist_ok=True)
 
 # Copy frontend assets to backend static folder on startup for self-contained serving
 FRONTEND_ASSETS = os.path.abspath(os.path.join(BASE_DIR, "..", "frontend", "src", "assets"))
@@ -387,10 +427,6 @@ def generate():
     return jsonify(new_batch)
 
 # --- Orders and Jacquard Generation ---
-
-ORDERS_JSON = os.path.join(BASE_DIR, "orders.json")
-ORDERS_DIR = os.path.join(STATIC_DIR, "orders")
-os.makedirs(ORDERS_DIR, exist_ok=True)
 
 def load_orders():
     if not os.path.exists(ORDERS_JSON):

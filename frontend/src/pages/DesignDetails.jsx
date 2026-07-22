@@ -20,6 +20,16 @@ export default function DesignDetails() {
 
   const [orderStatus, setOrderStatus] = useState(null); // 'ordering', 'success', 'error'
   const [orderData, setOrderData] = useState(null);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [quantity, setQuantity] = useState(1);
+
+  const calculateTotal = () => {
+    if (!design) return '0';
+    const rawPrice = materials[selectedMaterial].price.replace(/,/g, '');
+    const priceNum = parseFloat(rawPrice) || 0;
+    const total = priceNum * quantity;
+    return total.toLocaleString('en-IN');
+  };
 
   useEffect(() => {
     fetch(`http://localhost:5000/api/batches/${batchId}`)
@@ -73,6 +83,7 @@ export default function DesignDetails() {
 
   const handleBuyNow = async () => {
     setOrderStatus('ordering');
+    setShowConfirmModal(false);
     try {
       const response = await fetch('http://localhost:5000/api/orders', {
         method: 'POST',
@@ -84,6 +95,7 @@ export default function DesignDetails() {
           designId: designId,
           materialName: materials[selectedMaterial].name,
           price: materials[selectedMaterial].price,
+          quantity: quantity,
         }),
       });
 
@@ -202,8 +214,114 @@ export default function DesignDetails() {
           from { transform: translateY(20px); opacity: 0; }
           to { transform: translateY(0); opacity: 1; }
         }
+        .quantity-selector {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 12px;
+          margin: 16px 0;
+        }
+        .qty-btn {
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          border: 1px solid var(--border-color, #2a2a35);
+          background: rgba(255, 255, 255, 0.05);
+          color: var(--text-primary, #fff);
+          font-size: 1.2rem;
+          font-weight: bold;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.2s ease;
+        }
+        .qty-btn:hover {
+          background: var(--cyan, #00f2fe);
+          color: #101018;
+          border-color: var(--cyan, #00f2fe);
+        }
+        .qty-input {
+          width: 85px;
+          text-align: center;
+          background: rgba(0, 0, 0, 0.2);
+          border: 1px solid var(--border-color, #2a2a35);
+          border-radius: 6px;
+          padding: 6px;
+          color: var(--text-primary, #fff);
+          font-size: 1.1rem;
+          font-weight: 600;
+        }
       `}</style>
 
+      {/* Confirmation Modal */}
+      {showConfirmModal && (
+        <div className="order-modal-overlay">
+          <div className="order-modal-content">
+            <h2 className="modal-title">Confirm Saree Order</h2>
+            <p className="modal-text">
+              Review details and select the quantity of sarees to order.
+            </p>
+            <div className="modal-details-box">
+              <div className="modal-detail-item">
+                <span>Design Name:</span> <strong>{design.name}</strong>
+              </div>
+              <div className="modal-detail-item">
+                <span>Quality / Material:</span> <strong>{materials[selectedMaterial].name}</strong>
+              </div>
+              <div className="modal-detail-item">
+                <span>Price per Saree:</span> <strong>₹{materials[selectedMaterial].price}</strong>
+              </div>
+              <div className="modal-detail-item" style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '10px', marginTop: '10px' }}>
+                <span>Estimated Total:</span> <strong style={{ color: '#00e673', fontSize: '1.2rem' }}>₹{calculateTotal()}</strong>
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '24px' }}>
+              <span style={{ display: 'block', fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>
+                Order Quantity
+              </span>
+              <div className="quantity-selector">
+                <button
+                  type="button"
+                  className="qty-btn"
+                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                >
+                  -
+                </button>
+                <input
+                  type="number"
+                  className="qty-input"
+                  value={quantity}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value, 10);
+                    setQuantity(isNaN(val) ? 1 : Math.max(1, val));
+                  }}
+                  min="1"
+                />
+                <button
+                  type="button"
+                  className="qty-btn"
+                  onClick={() => setQuantity(quantity + 1)}
+                >
+                  +
+                </button>
+              </div>
+            </div>
+
+            <div className="modal-actions">
+              <button className="modal-btn secondary" onClick={() => setShowConfirmModal(false)}>
+                Cancel
+              </button>
+              <button className="modal-btn primary" onClick={handleBuyNow}>
+                Confirm & Place Order
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Success Modal */}
       {orderStatus === 'success' && (
         <div className="order-modal-overlay">
           <div className="order-modal-content">
@@ -219,7 +337,13 @@ export default function DesignDetails() {
                 <span>Material:</span> <strong>{orderData?.materialName}</strong>
               </div>
               <div className="modal-detail-item">
-                <span>Price:</span> <strong>₹{orderData?.price}</strong>
+                <span>Price per Saree:</span> <strong>₹{orderData?.price}</strong>
+              </div>
+              <div className="modal-detail-item">
+                <span>Quantity Ordered:</span> <strong>{orderData?.quantity} Saree{orderData?.quantity > 1 ? 's' : ''}</strong>
+              </div>
+              <div className="modal-detail-item" style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '10px', marginTop: '10px' }}>
+                <span>Total Bill Amount:</span> <strong style={{ color: '#00e673', fontSize: '1.2rem' }}>₹{((parseFloat(orderData?.price?.replace(/,/g, '')) || 0) * (orderData?.quantity || 1)).toLocaleString('en-IN')}</strong>
               </div>
             </div>
             <p className="modal-note">
@@ -332,7 +456,10 @@ export default function DesignDetails() {
             </button>
             <button 
               className="buy-now-btn"
-              onClick={handleBuyNow}
+              onClick={() => {
+                setQuantity(1);
+                setShowConfirmModal(true);
+              }}
               disabled={orderStatus === 'ordering'}
             >
               <BsCreditCard /> {orderStatus === 'ordering' ? 'Ordering...' : 'Buy now'}

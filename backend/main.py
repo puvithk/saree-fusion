@@ -32,16 +32,23 @@ if ON_VERCEL:
     os.makedirs(ASSETS_DIR, exist_ok=True)
     os.makedirs(ORDERS_DIR, exist_ok=True)
     
-    src_assets = os.path.join(SRC_STATIC, "assets")
-    if os.path.exists(src_assets):
-        for item in os.listdir(src_assets):
-            s = os.path.join(src_assets, item)
-            d = os.path.join(ASSETS_DIR, item)
-            if not os.path.exists(d):
-                if os.path.isdir(s):
-                    shutil.copytree(s, d)
-                else:
-                    shutil.copy2(s, d)
+    def copy_dir_recursive(src, dst):
+        if not os.path.exists(src):
+            return
+        os.makedirs(dst, exist_ok=True)
+        for item in os.listdir(src):
+            s = os.path.join(src, item)
+            d = os.path.join(dst, item)
+            if os.path.isdir(s):
+                copy_dir_recursive(s, d)
+            else:
+                if not os.path.exists(d):
+                    try:
+                        shutil.copy2(s, d)
+                    except Exception as e:
+                        print(f"Error copying {s} to {d}: {e}")
+                        
+    copy_dir_recursive(SRC_STATIC, STATIC_DIR)
                     
     src_batches = os.path.join(SRC_DIR, "batches.json")
     if os.path.exists(src_batches) and not os.path.exists(BATCHES_JSON):

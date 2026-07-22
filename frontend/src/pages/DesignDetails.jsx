@@ -107,15 +107,6 @@ export default function DesignDetails() {
       }
 
       const data = await response.json();
-      
-      try {
-        const localOrders = JSON.parse(localStorage.getItem('sareefusion_orders') || '[]');
-        localOrders.unshift(data);
-        localStorage.setItem('sareefusion_orders', JSON.stringify(localOrders));
-      } catch (e) {
-        console.error('Error saving order to localStorage:', e);
-      }
-
       setOrderData(data);
       setOrderStatus('success');
     } catch (err) {

@@ -9,56 +9,22 @@ export default function WeaverDashboard() {
   const [generatingId, setGeneratingId] = useState(null);
   const [selectedLoom, setSelectedLoom] = useState({}); // orderId -> 'traditional' | 'digital' | 'dobby'
 
-  const mapLoomOutputs = (outputs) => {
-    if (!outputs) return null;
-    const mapped = {};
-    for (const key of Object.keys(outputs)) {
-      const loom = outputs[key];
-      mapped[key] = {
-        ...loom,
-        bmpUrl: loom.bmpUrl && loom.bmpUrl.startsWith('/api/') ? `${API_BASE_URL}${loom.bmpUrl}` : loom.bmpUrl,
-        files: loom.files ? loom.files.map(f => ({
-          ...f,
-          url: f.url && f.url.startsWith('/api/') ? `${API_BASE_URL}${f.url}` : f.url
-        })) : []
-      };
-    }
-    return mapped;
-  };
-
   const fetchOrders = () => {
     fetch(`${API_BASE_URL}/api/orders`)
       .then((res) => res.json())
       .then((data) => {
-        let localOrders = [];
-        try {
-          localOrders = JSON.parse(localStorage.getItem('sareefusion_orders') || '[]');
-        } catch (e) {
-          console.error(e);
-        }
-
-        const combined = [...localOrders, ...data];
-        const uniqueOrders = [];
-        const seenIds = new Set();
-        for (const order of combined) {
-          if (!seenIds.has(order.id)) {
-            seenIds.add(order.id);
-            uniqueOrders.push(order);
-          }
-        }
-
-        const mappedData = uniqueOrders.map((o) => {
+        // Map images to backend URLs
+        const mappedData = data.map((o) => {
           const design = o.design;
           return {
             ...o,
             design: {
               ...design,
-              image: design.image && design.image.startsWith('/api/') ? `${API_BASE_URL}${design.image}` : design.image,
-              templateImage: design.templateImage && design.templateImage.startsWith('/api/') ? `${API_BASE_URL}${design.templateImage}` : design.templateImage,
+              image: design.image.startsWith('/api/') ? `${API_BASE_URL}${design.image}` : design.image,
+              templateImage: design.templateImage.startsWith('/api/') ? `${API_BASE_URL}${design.templateImage}` : design.templateImage,
             },
-            jacquardCardUrl: o.jacquardCardUrl ? (o.jacquardCardUrl.startsWith('/api/') ? `${API_BASE_URL}${o.jacquardCardUrl}` : o.jacquardCardUrl) : null,
-            jacquardTxtUrl: o.jacquardTxtUrl ? (o.jacquardTxtUrl.startsWith('/api/') ? `${API_BASE_URL}${o.jacquardTxtUrl}` : o.jacquardTxtUrl) : null,
-            loomOutputs: o.loomOutputs ? mapLoomOutputs(o.loomOutputs) : null
+            jacquardCardUrl: o.jacquardCardUrl ? `${API_BASE_URL}${o.jacquardCardUrl}` : null,
+            jacquardTxtUrl: o.jacquardTxtUrl ? `${API_BASE_URL}${o.jacquardTxtUrl}` : null,
           };
         });
         setOrders(mappedData);
@@ -66,26 +32,6 @@ export default function WeaverDashboard() {
       })
       .catch((err) => {
         console.error('Error fetching orders:', err);
-        let localOrders = [];
-        try {
-          localOrders = JSON.parse(localStorage.getItem('sareefusion_orders') || '[]');
-        } catch (e) {}
-        
-        const mappedData = localOrders.map((o) => {
-          const design = o.design;
-          return {
-            ...o,
-            design: {
-              ...design,
-              image: design.image && design.image.startsWith('/api/') ? `${API_BASE_URL}${design.image}` : design.image,
-              templateImage: design.templateImage && design.templateImage.startsWith('/api/') ? `${API_BASE_URL}${design.templateImage}` : design.templateImage,
-            },
-            jacquardCardUrl: o.jacquardCardUrl ? (o.jacquardCardUrl.startsWith('/api/') ? `${API_BASE_URL}${o.jacquardCardUrl}` : o.jacquardCardUrl) : null,
-            jacquardTxtUrl: o.jacquardTxtUrl ? (o.jacquardTxtUrl.startsWith('/api/') ? `${API_BASE_URL}${o.jacquardTxtUrl}` : o.jacquardTxtUrl) : null,
-            loomOutputs: o.loomOutputs ? mapLoomOutputs(o.loomOutputs) : null
-          };
-        });
-        setOrders(mappedData);
         setLoading(false);
       });
   };
@@ -97,45 +43,13 @@ export default function WeaverDashboard() {
   const handleGenerateJacquard = async (orderId) => {
     setGeneratingId(orderId);
     try {
-      const targetOrder = orders.find(o => o.id === orderId);
-      if (!targetOrder) {
-        throw new Error('Order not found');
-      }
-
       const response = await fetch(`${API_BASE_URL}/api/orders/${orderId}/generate-jacquard`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          templateImage: targetOrder.design.templateImage,
-          design: targetOrder.design,
-        }),
       });
-
       if (!response.ok) {
         throw new Error('Failed to generate Jacquard cards');
       }
-
-      const updatedOrder = await response.json();
-
-      try {
-        const localOrders = JSON.parse(localStorage.getItem('sareefusion_orders') || '[]');
-        const index = localOrders.findIndex(o => o.id === orderId);
-        if (index !== -1) {
-          localOrders[index] = {
-            ...localOrders[index],
-            ...updatedOrder
-          };
-        } else {
-          localOrders.push(updatedOrder);
-        }
-        localStorage.setItem('sareefusion_orders', JSON.stringify(localOrders));
-      } catch (e) {
-        console.error(e);
-      }
-
-      fetchOrders();
+      fetchOrders(); // Refresh order details
     } catch (err) {
       console.error(err);
       alert('Failed to generate Jacquard loom pattern.');
@@ -147,22 +61,17 @@ export default function WeaverDashboard() {
   const handleDeleteOrder = async (orderId) => {
     if (!confirm('Are you sure you want to delete this order?')) return;
     try {
-      await fetch(`${API_BASE_URL}/api/orders/${orderId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/orders/${orderId}`, {
         method: 'DELETE',
       });
+      if (!response.ok) {
+        throw new Error('Failed to delete order');
+      }
+      fetchOrders(); // Refresh orders
     } catch (err) {
       console.error(err);
+      alert('Failed to delete order.');
     }
-    
-    try {
-      const localOrders = JSON.parse(localStorage.getItem('sareefusion_orders') || '[]');
-      const updated = localOrders.filter(o => o.id !== orderId);
-      localStorage.setItem('sareefusion_orders', JSON.stringify(updated));
-    } catch (e) {
-      console.error(e);
-    }
-    
-    fetchOrders();
   };
 
   return (
@@ -571,6 +480,37 @@ export default function WeaverDashboard() {
                                 </div>
                               ))}
                             </div>
+
+                            {/* Punch Card Preview Block */}
+                            {loomData.punchCardPreview && loomData.punchCardPreview.length > 0 && (
+                              <div className="punch-card-preview-container" style={{ width: '100%', marginBottom: '16px', background: 'rgba(0, 0, 0, 0.3)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '8px', padding: '12px', textAlign: 'left', boxSizing: 'border-box' }}>
+                                <h5 style={{ fontSize: '0.8rem', color: 'var(--cyan, #00f2fe)', marginBottom: '8px', fontWeight: '700', letterSpacing: '0.5px', textTransform: 'uppercase', marginTop: 0 }}>
+                                  {currentLoomType === 'traditional' ? 'Punch Cards & Color Control Preview' : 'Harness Lift Plan Preview (First 10 Picks)'}
+                                </h5>
+                                <div style={{ maxHeight: '150px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.75rem', fontFamily: 'monospace' }}>
+                                  {currentLoomType === 'traditional' ? (
+                                    loomData.punchCardPreview.map((card, idx) => (
+                                      <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 6px', borderBottom: '1px solid rgba(255, 255, 255, 0.04)', gap: '8px' }}>
+                                        <span style={{ color: 'var(--text-primary, #fff)', fontWeight: '600', minWidth: '60px' }}>{card.card}</span>
+                                        <span style={{ color: 'rgba(255, 255, 255, 0.5)', letterSpacing: '1px', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={card.bits}>{card.bits}</span>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: '160px', justifyContent: 'flex-end' }}>
+                                          <span style={{ color: '#ffaa00', fontSize: '0.7rem' }}>RGB: {card.r}{card.g}{card.b}</span>
+                                          <span style={{ display: 'inline-block', width: '12px', height: '12px', borderRadius: '3px', backgroundColor: card.colorHex, border: '1px solid rgba(255, 255, 255, 0.2)' }} />
+                                          <span style={{ color: 'var(--text-secondary, #8c8c9e)', fontSize: '0.7rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '80px' }}>{card.colorName}</span>
+                                        </div>
+                                      </div>
+                                    ))
+                                  ) : (
+                                    loomData.punchCardPreview.map((pick, idx) => (
+                                      <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 6px', borderBottom: '1px solid rgba(255, 255, 255, 0.04)', gap: '8px' }}>
+                                        <span style={{ color: 'var(--text-primary, #fff)', fontWeight: '600', minWidth: '60px' }}>{pick.pick}</span>
+                                        <span style={{ color: 'var(--cyan, #00f2fe)', letterSpacing: '1px', flex: 1, textAlign: 'right' }}>{pick.bits}</span>
+                                      </div>
+                                    ))
+                                  )}
+                                </div>
+                              </div>
+                            )}
 
                             <div className="download-actions-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', width: '100%' }}>
                               {loomData.files.map((file, i) => (

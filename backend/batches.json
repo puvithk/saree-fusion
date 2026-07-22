@@ -1,5 +1,55 @@
 [
   {
+    "id": "FS-2026-07-22-215859",
+    "name": "Fusion Batch",
+    "status": "completed",
+    "createdOn": "22 Jul 2026, 09.58 PM",
+    "palluCount": 1,
+    "borderCount": 1,
+    "bodyCount": 1,
+    "totalDesigns": 1,
+    "generatedDesigns": 1,
+    "extraCount": 0,
+    "description": "",
+    "thumbnails": [
+      "/api/static/batches/FS-2026-07-22-215859/design_0_wearable.png"
+    ],
+    "uploadedComponents": {
+      "pallu": [
+        {
+          "label": "P1",
+          "image": "/api/static/batches/FS-2026-07-22-215859/uploads/pallu_0.png"
+        }
+      ],
+      "border": [
+        {
+          "label": "B1",
+          "image": "/api/static/batches/FS-2026-07-22-215859/uploads/border_0.png"
+        }
+      ],
+      "body": [
+        {
+          "label": "B1",
+          "image": "/api/static/batches/FS-2026-07-22-215859/uploads/body_0.png"
+        }
+      ]
+    },
+    "designs": [
+      {
+        "id": "FS-2026-07-22-215859-001",
+        "name": "Fusion Design P1-B1-B1",
+        "image": "/api/static/batches/FS-2026-07-22-215859/design_0_wearable.png",
+        "templateImage": "/api/static/batches/FS-2026-07-22-215859/design_0_template.png",
+        "tags": [
+          "P1",
+          "B1",
+          "B1"
+        ],
+        "matchPercent": "86% match"
+      }
+    ]
+  },
+  {
     "id": "FS-2026-07-22-205608",
     "name": "Fusion Batch",
     "status": "completed",

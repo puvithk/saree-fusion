@@ -406,7 +406,7 @@ export default function WeaverDashboard() {
                       </div>
                       <div className="specs-row">
                         <span className="specs-label">Quantity</span>
-                        <span className="specs-value">{order.quantity} Saree</span>
+                        <span className="specs-value">{order.quantity} Saree{order.quantity > 1 ? 's' : ''}</span>
                       </div>
 
                       {order.yarnColors && (

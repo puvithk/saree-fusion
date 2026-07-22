@@ -498,7 +498,26 @@ def generate_loom_files(template_path, order_dir):
     cards = []
     for r in range(t_height):
         row_bits = [("1" if thresh_t[r, c] == 255 else "0") for c in range(t_width)]
-        cards.append(f"CARD {r+1:03d}: " + "".join(row_bits))
+        
+        # Calculate color information for this pick (row) to support multi-color RGB weaving
+        row_pixels = resized_t[r] # BGR
+        active_pixels = [row_pixels[c] for c in range(t_width) if thresh_t[r, c] == 255]
+        if len(active_pixels) == 0:
+            active_pixels = list(row_pixels)
+        
+        avg_bgr = np.mean(active_pixels, axis=0)
+        avg_b, avg_g, avg_r = int(avg_bgr[0]), int(avg_bgr[1]), int(avg_bgr[2])
+        col_name = get_color_name(avg_r, avg_g, avg_b)
+        
+        # Derive RGB binary bits for shuttle/color selection control
+        r_bit = "1" if avg_r > 127 else "0"
+        g_bit = "1" if avg_g > 127 else "0"
+        b_bit = "1" if avg_b > 127 else "0"
+        
+        cards.append(
+            f"CARD {r+1:03d}: " + "".join(row_bits) + 
+            f" | RGB_CONTROL: R={r_bit},G={g_bit},B={b_bit} | COLOR: {col_name} ({avg_r},{avg_g},{avg_b})"
+        )
         
     with open(os.path.join(order_dir, "jacquard_cards.txt"), "w") as f:
         f.write("\n".join(cards))

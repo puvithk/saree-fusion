@@ -1,0 +1,328 @@
+[
+  {
+    "id": "ORD-103789",
+    "batchId": "FS-2025-06-09-12",
+    "design": {
+      "id": "2",
+      "name": "Royal Heritage Red Saree",
+      "image": "/api/static/assets/red-saree.png",
+      "templateImage": "/api/static/assets/red-saree.png",
+      "tags": [
+        "P1",
+        "BR1",
+        "B1"
+      ]
+    },
+    "materialName": "Banarasi Silk",
+    "price": 4235,
+    "customerName": "Sri Devaki",
+    "quantity": 1,
+    "status": "Jacquard Card Generated",
+    "createdOn": "22 Jul 2026, 09:08 PM",
+    "jacquardCardUrl": "/api/static/orders/ORD-103789/jacquard.bmp",
+    "jacquardTxtUrl": "/api/static/orders/ORD-103789/jacquard_cards.txt",
+    "hookSize": 200,
+    "totalCards": 100,
+    "yarnColors": {
+      "pallu": {
+        "hex": "#70675B",
+        "name": "Copper Zari",
+        "role": "Pallu Silk (Weft)"
+      },
+      "border": {
+        "hex": "#9F6C4A",
+        "name": "Copper Zari",
+        "role": "Border Zari (Weft)"
+      },
+      "body": {
+        "hex": "#36394D",
+        "name": "Charcoal Black",
+        "role": "Saree Body (Warp)"
+      }
+    },
+    "loomOutputs": {
+      "traditional": {
+        "name": "Traditional Jacquard Loom",
+        "format": "Card Punch Matrix (.txt/.bmp)",
+        "stats": [
+          {
+            "label": "Warp Hooks",
+            "value": "200"
+          },
+          {
+            "label": "Picks/Cards",
+            "value": "100"
+          },
+          {
+            "label": "Controller",
+            "value": "Manual Punch Cards"
+          }
+        ],
+        "bmpUrl": "/api/static/orders/ORD-103789/jacquard.bmp",
+        "files": [
+          {
+            "label": "Download Loom BMP",
+            "url": "/api/static/orders/ORD-103789/jacquard.bmp",
+            "filename": "jacquard.bmp"
+          },
+          {
+            "label": "Download Cards TXT",
+            "url": "/api/static/orders/ORD-103789/jacquard_cards.txt",
+            "filename": "jacquard_cards.txt"
+          }
+        ]
+      },
+      "digital": {
+        "name": "Modern Digital Jacquard",
+        "format": "Staubli JC5 / WIF Data",
+        "stats": [
+          {
+            "label": "Electronic Hooks",
+            "value": "200"
+          },
+          {
+            "label": "Weft Picks",
+            "value": "100"
+          },
+          {
+            "label": "Standard format",
+            "value": "Staubli JC5 / WIF"
+          }
+        ],
+        "bmpUrl": "/api/static/orders/ORD-103789/jacquard.bmp",
+        "files": [
+          {
+            "label": "Staubli File (.jac)",
+            "url": "/api/static/orders/ORD-103789/digital_pattern.jac",
+            "filename": "digital_pattern.jac"
+          },
+          {
+            "label": "Loom Tie-Up (.wif)",
+            "url": "/api/static/orders/ORD-103789/digital_tieup.wif",
+            "filename": "digital_tieup.wif"
+          }
+        ]
+      },
+      "dobby": {
+        "name": "Harness Dobby Loom",
+        "format": "Lift & Draw Plan (.dob/.txt)",
+        "stats": [
+          {
+            "label": "Harnesses",
+            "value": "24"
+          },
+          {
+            "label": "Total Picks",
+            "value": "100"
+          },
+          {
+            "label": "Draft Rule",
+            "value": "24 Shaft Straight Draw"
+          }
+        ],
+        "bmpUrl": "/api/static/orders/ORD-103789/jacquard.bmp",
+        "files": [
+          {
+            "label": "Lift Plan (.dob)",
+            "url": "/api/static/orders/ORD-103789/dobby_lift.dob",
+            "filename": "dobby_lift.dob"
+          },
+          {
+            "label": "Draw Plan (.txt)",
+            "url": "/api/static/orders/ORD-103789/dobby_draft.txt",
+            "filename": "dobby_draft.txt"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "ORD-681087",
+    "batchId": "FS-2025-06-09-12",
+    "design": {
+      "id": "2",
+      "name": "Royal Heritage Red Saree",
+      "image": "/api/static/assets/red-saree.png",
+      "templateImage": "/api/static/assets/red-saree.png",
+      "tags": [
+        "P1",
+        "BR1",
+        "B1"
+      ]
+    },
+    "materialName": "Kanchipuram Silk",
+    "price": 3256,
+    "customerName": "Sri Devaki",
+    "quantity": 1,
+    "status": "Jacquard Card Generated",
+    "createdOn": "22 Jul 2026, 09:06 PM",
+    "jacquardCardUrl": "/api/static/orders/ORD-681087/jacquard.bmp",
+    "jacquardTxtUrl": "/api/static/orders/ORD-681087/jacquard_cards.txt",
+    "hookSize": 200,
+    "totalCards": 100,
+    "yarnColors": {
+      "pallu": {
+        "hex": "#70675B",
+        "name": "Copper Zari",
+        "role": "Pallu Silk (Weft)"
+      },
+      "border": {
+        "hex": "#9F6C4A",
+        "name": "Copper Zari",
+        "role": "Border Zari (Weft)"
+      },
+      "body": {
+        "hex": "#36394D",
+        "name": "Charcoal Black",
+        "role": "Saree Body (Warp)"
+      }
+    },
+    "loomOutputs": {
+      "traditional": {
+        "name": "Traditional Jacquard Loom",
+        "format": "Card Punch Matrix (.txt/.bmp)",
+        "stats": [
+          {
+            "label": "Warp Hooks",
+            "value": "200"
+          },
+          {
+            "label": "Picks/Cards",
+            "value": "100"
+          },
+          {
+            "label": "Controller",
+            "value": "Manual Punch Cards"
+          }
+        ],
+        "bmpUrl": "/api/static/orders/ORD-681087/jacquard.bmp",
+        "files": [
+          {
+            "label": "Download Loom BMP",
+            "url": "/api/static/orders/ORD-681087/jacquard.bmp",
+            "filename": "jacquard.bmp"
+          },
+          {
+            "label": "Download Cards TXT",
+            "url": "/api/static/orders/ORD-681087/jacquard_cards.txt",
+            "filename": "jacquard_cards.txt"
+          }
+        ]
+      },
+      "digital": {
+        "name": "Modern Digital Jacquard",
+        "format": "Staubli JC5 / WIF Data",
+        "stats": [
+          {
+            "label": "Electronic Hooks",
+            "value": "200"
+          },
+          {
+            "label": "Weft Picks",
+            "value": "100"
+          },
+          {
+            "label": "Standard format",
+            "value": "Staubli JC5 / WIF"
+          }
+        ],
+        "bmpUrl": "/api/static/orders/ORD-681087/jacquard.bmp",
+        "files": [
+          {
+            "label": "Staubli File (.jac)",
+            "url": "/api/static/orders/ORD-681087/digital_pattern.jac",
+            "filename": "digital_pattern.jac"
+          },
+          {
+            "label": "Loom Tie-Up (.wif)",
+            "url": "/api/static/orders/ORD-681087/digital_tieup.wif",
+            "filename": "digital_tieup.wif"
+          }
+        ]
+      },
+      "dobby": {
+        "name": "Harness Dobby Loom",
+        "format": "Lift & Draw Plan (.dob/.txt)",
+        "stats": [
+          {
+            "label": "Harnesses",
+            "value": "24"
+          },
+          {
+            "label": "Total Picks",
+            "value": "100"
+          },
+          {
+            "label": "Draft Rule",
+            "value": "24 Shaft Straight Draw"
+          }
+        ],
+        "bmpUrl": "/api/static/orders/ORD-681087/jacquard.bmp",
+        "files": [
+          {
+            "label": "Lift Plan (.dob)",
+            "url": "/api/static/orders/ORD-681087/dobby_lift.dob",
+            "filename": "dobby_lift.dob"
+          },
+          {
+            "label": "Draw Plan (.txt)",
+            "url": "/api/static/orders/ORD-681087/dobby_draft.txt",
+            "filename": "dobby_draft.txt"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "ORD-285919",
+    "batchId": "FS-2026-07-22-205608",
+    "design": {
+      "id": "FS-2026-07-22-205608-001",
+      "name": "Fusion Design P1-B1-B1",
+      "image": "/api/static/batches/FS-2026-07-22-205608/design_0_wearable.png",
+      "templateImage": "/api/static/batches/FS-2026-07-22-205608/design_0_template.png",
+      "tags": [
+        "P1",
+        "B1",
+        "B1"
+      ],
+      "matchPercent": "78% match"
+    },
+    "materialName": "Banarasi Silk",
+    "price": 4235,
+    "customerName": "Sri Devaki",
+    "quantity": 1,
+    "status": "Jacquard Card Generated",
+    "createdOn": "22 Jul 2026, 09:01 PM",
+    "jacquardCardUrl": "/api/static/orders/ORD-285919/jacquard.bmp",
+    "jacquardTxtUrl": "/api/static/orders/ORD-285919/jacquard_cards.txt",
+    "hookSize": 200,
+    "totalCards": 100
+  },
+  {
+    "id": "ORD-535756",
+    "batchId": "FS-2025-06-09-12",
+    "design": {
+      "id": "FS-12-001",
+      "name": "Red saree with peacock design 1",
+      "image": "/api/static/assets/red-saree.png",
+      "templateImage": "/api/static/assets/red-saree.png",
+      "tags": [
+        "P1",
+        "BR2",
+        "B3"
+      ],
+      "matchPercent": "85% match"
+    },
+    "materialName": "Banarasi Silk",
+    "price": 4235,
+    "customerName": "Sri Devaki",
+    "quantity": 1,
+    "status": "Jacquard Card Generated",
+    "createdOn": "22 Jul 2026, 09:00 PM",
+    "jacquardCardUrl": "/api/static/orders/ORD-535756/jacquard.bmp",
+    "jacquardTxtUrl": "/api/static/orders/ORD-535756/jacquard_cards.txt",
+    "hookSize": 200,
+    "totalCards": 100
+  }
+]

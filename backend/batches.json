@@ -1,0 +1,339 @@
+[
+  {
+    "id": "FS-2026-07-22-205608",
+    "name": "Fusion Batch",
+    "status": "completed",
+    "createdOn": "22 Jul 2026, 08.56 PM",
+    "palluCount": 1,
+    "borderCount": 1,
+    "bodyCount": 1,
+    "totalDesigns": 1,
+    "generatedDesigns": 1,
+    "extraCount": 0,
+    "description": "",
+    "thumbnails": [
+      "/api/static/batches/FS-2026-07-22-205608/design_0_wearable.png"
+    ],
+    "uploadedComponents": {
+      "pallu": [
+        {
+          "label": "P1",
+          "image": "/api/static/batches/FS-2026-07-22-205608/uploads/pallu_0.png"
+        }
+      ],
+      "border": [
+        {
+          "label": "B1",
+          "image": "/api/static/batches/FS-2026-07-22-205608/uploads/border_0.png"
+        }
+      ],
+      "body": [
+        {
+          "label": "B1",
+          "image": "/api/static/batches/FS-2026-07-22-205608/uploads/body_0.png"
+        }
+      ]
+    },
+    "designs": [
+      {
+        "id": "FS-2026-07-22-205608-001",
+        "name": "Fusion Design P1-B1-B1",
+        "image": "/api/static/batches/FS-2026-07-22-205608/design_0_wearable.png",
+        "templateImage": "/api/static/batches/FS-2026-07-22-205608/design_0_template.png",
+        "tags": [
+          "P1",
+          "B1",
+          "B1"
+        ],
+        "matchPercent": "78% match"
+      }
+    ]
+  },
+  {
+    "id": "FS-2025-06-09-12",
+    "name": "Fusion Batch",
+    "status": "completed",
+    "createdOn": "09 Jun 2025, 10.30 AM",
+    "palluCount": 3,
+    "borderCount": 3,
+    "bodyCount": 3,
+    "totalDesigns": 24,
+    "generatedDesigns": 24,
+    "extraCount": 5,
+    "description": "Royal Banarasi fusion design batch",
+    "thumbnails": [
+      "/api/static/assets/pallu-swatch.png",
+      "/api/static/assets/border-swatch.png",
+      "/api/static/assets/body-swatch.png"
+    ],
+    "uploadedComponents": {
+      "pallu": [
+        {
+          "label": "P1",
+          "image": "/api/static/assets/pallu-swatch.png"
+        },
+        {
+          "label": "P2",
+          "image": "/api/static/assets/pallu-swatch.png"
+        },
+        {
+          "label": "P3",
+          "image": "/api/static/assets/pallu-swatch.png"
+        }
+      ],
+      "border": [
+        {
+          "label": "BR1",
+          "image": "/api/static/assets/border-swatch.png"
+        },
+        {
+          "label": "BR2",
+          "image": "/api/static/assets/border-swatch.png"
+        }
+      ],
+      "body": []
+    },
+    "designs": [
+      {
+        "id": "FS-12-001",
+        "name": "Red saree with peacock design 1",
+        "image": "/api/static/assets/red-saree.png",
+        "templateImage": "/api/static/assets/red-saree.png",
+        "tags": [
+          "P1",
+          "BR2",
+          "B3"
+        ],
+        "matchPercent": "85% match"
+      },
+      {
+        "id": "FS-12-002",
+        "name": "Red saree with peacock design 2",
+        "image": "/api/static/assets/red-saree.png",
+        "templateImage": "/api/static/assets/red-saree.png",
+        "tags": [
+          "P1",
+          "BR2",
+          "B3"
+        ],
+        "matchPercent": "72% match"
+      },
+      {
+        "id": "FS-12-003",
+        "name": "Red saree with peacock design 3",
+        "image": "/api/static/assets/red-saree.png",
+        "templateImage": "/api/static/assets/red-saree.png",
+        "tags": [
+          "P1",
+          "BR2",
+          "B3"
+        ],
+        "matchPercent": "93% match"
+      },
+      {
+        "id": "FS-12-004",
+        "name": "Red saree with peacock design 4",
+        "image": "/api/static/assets/red-saree.png",
+        "templateImage": "/api/static/assets/red-saree.png",
+        "tags": [
+          "P1",
+          "BR2",
+          "B3"
+        ],
+        "matchPercent": "85% match"
+      },
+      {
+        "id": "FS-12-005",
+        "name": "Red saree with peacock design 5",
+        "image": "/api/static/assets/red-saree.png",
+        "templateImage": "/api/static/assets/red-saree.png",
+        "tags": [
+          "P1",
+          "BR2",
+          "B3"
+        ],
+        "matchPercent": "72% match"
+      },
+      {
+        "id": "FS-12-006",
+        "name": "Red saree with peacock design 6",
+        "image": "/api/static/assets/red-saree.png",
+        "templateImage": "/api/static/assets/red-saree.png",
+        "tags": [
+          "P1",
+          "BR2",
+          "B3"
+        ],
+        "matchPercent": "93% match"
+      },
+      {
+        "id": "FS-12-007",
+        "name": "Red saree with peacock design 7",
+        "image": "/api/static/assets/red-saree.png",
+        "templateImage": "/api/static/assets/red-saree.png",
+        "tags": [
+          "P1",
+          "BR2",
+          "B3"
+        ],
+        "matchPercent": "85% match"
+      },
+      {
+        "id": "FS-12-008",
+        "name": "Red saree with peacock design 8",
+        "image": "/api/static/assets/red-saree.png",
+        "templateImage": "/api/static/assets/red-saree.png",
+        "tags": [
+          "P1",
+          "BR2",
+          "B3"
+        ],
+        "matchPercent": "72% match"
+      },
+      {
+        "id": "FS-12-009",
+        "name": "Red saree with peacock design 9",
+        "image": "/api/static/assets/red-saree.png",
+        "templateImage": "/api/static/assets/red-saree.png",
+        "tags": [
+          "P1",
+          "BR2",
+          "B3"
+        ],
+        "matchPercent": "93% match"
+      },
+      {
+        "id": "FS-12-0010",
+        "name": "Red saree with peacock design 10",
+        "image": "/api/static/assets/red-saree.png",
+        "templateImage": "/api/static/assets/red-saree.png",
+        "tags": [
+          "P1",
+          "BR2",
+          "B3"
+        ],
+        "matchPercent": "85% match"
+      },
+      {
+        "id": "FS-12-0011",
+        "name": "Red saree with peacock design 11",
+        "image": "/api/static/assets/red-saree.png",
+        "templateImage": "/api/static/assets/red-saree.png",
+        "tags": [
+          "P1",
+          "BR2",
+          "B3"
+        ],
+        "matchPercent": "72% match"
+      },
+      {
+        "id": "FS-12-0012",
+        "name": "Red saree with peacock design 12",
+        "image": "/api/static/assets/red-saree.png",
+        "templateImage": "/api/static/assets/red-saree.png",
+        "tags": [
+          "P1",
+          "BR2",
+          "B3"
+        ],
+        "matchPercent": "93% match"
+      },
+      {
+        "id": "FS-12-0013",
+        "name": "Red saree with peacock design 13",
+        "image": "/api/static/assets/red-saree.png",
+        "templateImage": "/api/static/assets/red-saree.png",
+        "tags": [
+          "P1",
+          "BR2",
+          "B3"
+        ],
+        "matchPercent": "85% match"
+      },
+      {
+        "id": "FS-12-0014",
+        "name": "Red saree with peacock design 14",
+        "image": "/api/static/assets/red-saree.png",
+        "templateImage": "/api/static/assets/red-saree.png",
+        "tags": [
+          "P1",
+          "BR2",
+          "B3"
+        ],
+        "matchPercent": "72% match"
+      },
+      {
+        "id": "FS-12-0015",
+        "name": "Red saree with peacock design 15",
+        "image": "/api/static/assets/red-saree.png",
+        "templateImage": "/api/static/assets/red-saree.png",
+        "tags": [
+          "P1",
+          "BR2",
+          "B3"
+        ],
+        "matchPercent": "93% match"
+      },
+      {
+        "id": "FS-12-0016",
+        "name": "Red saree with peacock design 16",
+        "image": "/api/static/assets/red-saree.png",
+        "templateImage": "/api/static/assets/red-saree.png",
+        "tags": [
+          "P1",
+          "BR2",
+          "B3"
+        ],
+        "matchPercent": "85% match"
+      },
+      {
+        "id": "FS-12-0017",
+        "name": "Red saree with peacock design 17",
+        "image": "/api/static/assets/red-saree.png",
+        "templateImage": "/api/static/assets/red-saree.png",
+        "tags": [
+          "P1",
+          "BR2",
+          "B3"
+        ],
+        "matchPercent": "72% match"
+      },
+      {
+        "id": "FS-12-0018",
+        "name": "Red saree with peacock design 18",
+        "image": "/api/static/assets/red-saree.png",
+        "templateImage": "/api/static/assets/red-saree.png",
+        "tags": [
+          "P1",
+          "BR2",
+          "B3"
+        ],
+        "matchPercent": "93% match"
+      },
+      {
+        "id": "FS-12-0019",
+        "name": "Red saree with peacock design 19",
+        "image": "/api/static/assets/red-saree.png",
+        "templateImage": "/api/static/assets/red-saree.png",
+        "tags": [
+          "P1",
+          "BR2",
+          "B3"
+        ],
+        "matchPercent": "85% match"
+      },
+      {
+        "id": "FS-12-0020",
+        "name": "Red saree with peacock design 20",
+        "image": "/api/static/assets/red-saree.png",
+        "templateImage": "/api/static/assets/red-saree.png",
+        "tags": [
+          "P1",
+          "BR2",
+          "B3"
+        ],
+        "matchPercent": "72% match"
+      }
+    ]
+  }
+]

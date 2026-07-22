@@ -118,6 +118,7 @@ export default function Design() {
     body: [],
   });
   const [description, setDescription] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const handleFilesAdd = (key, newFiles) => {
     const type = COMPONENT_TYPES.find((t) => t.key === key);
@@ -145,8 +146,33 @@ export default function Design() {
   const totalUploads = uploads.pallu.length + uploads.border.length + uploads.body.length;
   const canGenerate = uploads.pallu.length > 0 || uploads.border.length > 0;
 
-  const handleGenerate = () => {
-    navigate('/collections');
+  const handleGenerate = async () => {
+    if (!canGenerate || isGenerating) return;
+    setIsGenerating(true);
+    try {
+      const formData = new FormData();
+      uploads.pallu.forEach((item) => formData.append('pallu', item.file));
+      uploads.border.forEach((item) => formData.append('border', item.file));
+      uploads.body.forEach((item) => formData.append('body', item.file));
+      formData.append('description', description);
+
+      const response = await fetch('http://localhost:5000/api/generate', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate fusion design');
+      }
+
+      const data = await response.json();
+      navigate(`/collections/batch/${data.id}`);
+    } catch (err) {
+      console.error(err);
+      alert('Error generating design fusion. Please try again.');
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   return (
@@ -237,11 +263,11 @@ export default function Design() {
       {/* Generate Button */}
       <div className="design-generate-section">
         <button
-          className={`generate-fusion-btn ${!canGenerate ? 'disabled' : ''}`}
+          className={`generate-fusion-btn ${(!canGenerate || isGenerating) ? 'disabled' : ''}`}
           onClick={handleGenerate}
-          disabled={!canGenerate}
+          disabled={!canGenerate || isGenerating}
         >
-          <HiOutlineSparkles /> Generate Fusion
+          <HiOutlineSparkles /> {isGenerating ? 'Generating...' : 'Generate Fusion'}
         </button>
         {!canGenerate && (
           <p className="generate-hint">Upload at least one Pallu or Border image to generate</p>

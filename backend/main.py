@@ -283,11 +283,35 @@ def generate():
     borders = save_uploaded_files("border")
     bodies = save_uploaded_files("body")
     
+    # Extract style & model preferences from request
+    style = request.form.get("style", "normal").lower()
+    model_type = request.form.get("model", "model_1").lower()
+    
+    style_map = {
+        "normal": {
+            "model_1": "red-saree.png",
+            "model_2": "silk-saree.png",
+            "model_3": "cotton-saree.png"
+        },
+        "mysore": {
+            "model_1": "traditional-saree.png",
+            "model_2": "bridal-saree.png",
+            "model_3": "silk-saree.png"
+        },
+        "kadagu": {
+            "model_1": "cotton-saree.png",
+            "model_2": "traditional-saree.png",
+            "model_3": "bridal-saree.png"
+        }
+    }
+    
+    model_filename = style_map.get(style, style_map["normal"]).get(model_type, "red-saree.png")
+    
     # Setup Fallback files if any lists are empty
     fallback_pallu = os.path.join(ASSETS_DIR, "pallu-swatch.png")
     fallback_border = os.path.join(ASSETS_DIR, "border-swatch.png")
     fallback_body = os.path.join(ASSETS_DIR, "body-swatch.png")
-    fallback_model = os.path.join(ASSETS_DIR, "red-saree.png")
+    fallback_model = os.path.join(ASSETS_DIR, model_filename)
     
     # Ensure they exist in the assets directory
     if not os.path.exists(fallback_pallu):
@@ -295,7 +319,9 @@ def generate():
         fallback_pallu = os.path.join(FRONTEND_ASSETS, "pallu-swatch.png")
         fallback_border = os.path.join(FRONTEND_ASSETS, "border-swatch.png")
         fallback_body = os.path.join(FRONTEND_ASSETS, "body-swatch.png")
-        fallback_model = os.path.join(FRONTEND_ASSETS, "red-saree.png")
+        fallback_model = os.path.join(FRONTEND_ASSETS, model_filename)
+        if not os.path.exists(fallback_model):
+            fallback_model = os.path.join(FRONTEND_ASSETS, "red-saree.png")
 
     p_list = pallus if len(pallus) > 0 else [{"label": "P1", "path": fallback_pallu, "url": "/api/static/assets/pallu-swatch.png"}]
     br_list = borders if len(borders) > 0 else [{"label": "BR1", "path": fallback_border, "url": "/api/static/assets/border-swatch.png"}]

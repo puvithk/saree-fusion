@@ -19,18 +19,14 @@ export default function Navbar() {
   const getBreadcrumbs = () => {
     const path = location.pathname;
     const crumbs = [];
-    if (path.startsWith('/collections')) {
+    if (path.startsWith('/collections/batch/')) {
       crumbs.push({ label: 'Collections', to: '/collections' });
-      if (path.includes('/batch/')) {
-        crumbs.push({ label: 'Fusion result', to: path.split('/design/')[0] });
-        if (path.includes('/design/')) {
-          crumbs.push({ label: 'Design details', to: path, active: true });
-        } else {
-          crumbs[crumbs.length - 1].active = true;
-        }
+      crumbs.push({ label: 'Fusion result', to: path.split('/design/')[0] });
+      if (path.includes('/design/')) {
+        crumbs.push({ label: 'Design details', to: path, active: true });
+      } else {
+        crumbs[crumbs.length - 1].active = true;
       }
-    } else if (path.startsWith('/sarees')) {
-      // No breadcrumbs needed for the Sarees page
     }
     return crumbs;
   };

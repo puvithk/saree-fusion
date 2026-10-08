@@ -1,8 +1,9 @@
-import { Link, useLocation } from 'react-router-dom';
-import { FiSearch, FiUser, FiHeart, FiShoppingCart } from 'react-icons/fi';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { FiSearch, FiUser, FiHeart, FiShoppingCart, FiLogOut } from 'react-icons/fi';
 import { BiHome, BiPencil } from 'react-icons/bi';
 import { BsGrid, BsChevronRight } from 'react-icons/bs';
 import { GiClothes } from 'react-icons/gi';
+import { useAuth } from '../context/AuthContext.jsx';
 import logoImage from '../assets/logo-image.png';
 
 const navLinks = [
@@ -15,6 +16,13 @@ const navLinks = [
 
 export default function Navbar() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout, authEnabled } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   const getBreadcrumbs = () => {
     const path = location.pathname;
@@ -63,7 +71,33 @@ export default function Navbar() {
 
         <div className="navbar-actions">
           <button className="action-btn" aria-label="Search"><FiSearch /></button>
-          <button className="action-btn" aria-label="Account"><FiUser /></button>
+
+          {authEnabled && user ? (
+            /* Logged-in user area */
+            <div className="navbar-user">
+              <div className="navbar-avatar" title={user.name}>
+                {user.name ? user.name.charAt(0).toUpperCase() : <FiUser />}
+              </div>
+              <span className="navbar-username">{user.name}</span>
+              <button
+                className="action-btn logout-btn"
+                onClick={handleLogout}
+                aria-label="Sign out"
+                title="Sign out"
+              >
+                <FiLogOut />
+              </button>
+            </div>
+          ) : authEnabled && !user ? (
+            /* Auth enabled but not logged in */
+            <Link to="/login" className="navbar-signin-link">
+              <FiUser /> Sign in
+            </Link>
+          ) : (
+            /* Auth disabled */
+            <button className="action-btn" aria-label="Account"><FiUser /></button>
+          )}
+
           <button className="action-btn" aria-label="Wishlist"><FiHeart /></button>
           <button className="action-btn" aria-label="Cart"><FiShoppingCart /></button>
         </div>

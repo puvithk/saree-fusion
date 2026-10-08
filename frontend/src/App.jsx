@@ -8,26 +8,37 @@ import DesignDetails from './pages/DesignDetails';
 import Sarees from './pages/Sarees';
 import Design from './pages/Design';
 import WeaverDashboard from './pages/WeaverDashboard';
+import Login from './pages/Login';
+import Signup from './pages/Signup';
+import ProtectedRoute from './components/ProtectedRoute';
+import { AuthProvider } from './context/AuthContext.jsx';
 import './App.css';
 
 function App() {
   return (
     <Router>
-      <div className="app">
-        <Navbar />
-        <main className="main-content">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/collections" element={<Collections />} />
-            <Route path="/collections/batch/:batchId" element={<FusionResult />} />
-            <Route path="/collections/batch/:batchId/design/:designId" element={<DesignDetails />} />
-            <Route path="/sarees" element={<Sarees />} />
-            <Route path="/design" element={<Design />} />
-            <Route path="/weaver" element={<WeaverDashboard />} />
-          </Routes>
-        </main>
-        <Footer />
-      </div>
+      <AuthProvider>
+        <div className="app">
+          <Navbar />
+          <main className="main-content">
+            <Routes>
+              {/* Public auth routes */}
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+
+              {/* Protected routes */}
+              <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+              <Route path="/collections" element={<ProtectedRoute><Collections /></ProtectedRoute>} />
+              <Route path="/collections/batch/:batchId" element={<ProtectedRoute><FusionResult /></ProtectedRoute>} />
+              <Route path="/collections/batch/:batchId/design/:designId" element={<ProtectedRoute><DesignDetails /></ProtectedRoute>} />
+              <Route path="/sarees" element={<ProtectedRoute><Sarees /></ProtectedRoute>} />
+              <Route path="/design" element={<ProtectedRoute><Design /></ProtectedRoute>} />
+              <Route path="/weaver" element={<ProtectedRoute><WeaverDashboard /></ProtectedRoute>} />
+            </Routes>
+          </main>
+          <Footer />
+        </div>
+      </AuthProvider>
     </Router>
   );
 }

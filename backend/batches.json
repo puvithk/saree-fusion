@@ -1,5 +1,161 @@
 [
   {
+    "id": "FS-2026-10-11-182335",
+    "name": "Fusion Batch",
+    "status": "completed",
+    "createdOn": "11 Oct 2026, 06.23 PM",
+    "palluCount": 1,
+    "borderCount": 1,
+    "bodyCount": 1,
+    "totalDesigns": 1,
+    "generatedDesigns": 1,
+    "extraCount": 0,
+    "description": "",
+    "engine": "Google Gemini Multimodal AI",
+    "thumbnails": [
+      "/api/static/batches/FS-2026-10-11-182335/design_0_wearable.png"
+    ],
+    "uploadedComponents": {
+      "pallu": [
+        {
+          "label": "P1",
+          "image": "/api/static/batches/FS-2026-10-11-182335/uploads/pallu_0.png"
+        }
+      ],
+      "border": [
+        {
+          "label": "B1",
+          "image": "/api/static/batches/FS-2026-10-11-182335/uploads/border_0.png"
+        }
+      ],
+      "body": [
+        {
+          "label": "B1",
+          "image": "/api/static/batches/FS-2026-10-11-182335/uploads/body_0.png"
+        }
+      ]
+    },
+    "designs": [
+      {
+        "id": "FS-2026-10-11-182335-001",
+        "name": "Fusion Design P1-B1-B1",
+        "image": "/api/static/batches/FS-2026-10-11-182335/design_0_wearable.png",
+        "templateImage": "/api/static/batches/FS-2026-10-11-182335/design_0_template.png",
+        "tags": [
+          "P1",
+          "B1",
+          "B1"
+        ],
+        "matchPercent": "99% AI Match",
+        "engine": "Google Gemini Multimodal AI"
+      }
+    ]
+  },
+  {
+    "id": "FS-2026-10-11-182135",
+    "name": "Fusion Batch",
+    "status": "completed",
+    "createdOn": "11 Oct 2026, 06.21 PM",
+    "palluCount": 1,
+    "borderCount": 1,
+    "bodyCount": 1,
+    "totalDesigns": 1,
+    "generatedDesigns": 1,
+    "extraCount": 0,
+    "description": "",
+    "engine": "Google Gemini Multimodal AI",
+    "thumbnails": [
+      "/api/static/batches/FS-2026-10-11-182135/design_0_wearable.png"
+    ],
+    "uploadedComponents": {
+      "pallu": [
+        {
+          "label": "P1",
+          "image": "/api/static/batches/FS-2026-10-11-182135/uploads/pallu_0.jpeg"
+        }
+      ],
+      "border": [
+        {
+          "label": "B1",
+          "image": "/api/static/batches/FS-2026-10-11-182135/uploads/border_0.png"
+        }
+      ],
+      "body": [
+        {
+          "label": "B1",
+          "image": "/api/static/batches/FS-2026-10-11-182135/uploads/body_0.jpg"
+        }
+      ]
+    },
+    "designs": [
+      {
+        "id": "FS-2026-10-11-182135-001",
+        "name": "Fusion Design P1-B1-B1",
+        "image": "/api/static/batches/FS-2026-10-11-182135/design_0_wearable.png",
+        "templateImage": "/api/static/batches/FS-2026-10-11-182135/design_0_template.png",
+        "tags": [
+          "P1",
+          "B1",
+          "B1"
+        ],
+        "matchPercent": "99% AI Match",
+        "engine": "Google Gemini Multimodal AI"
+      }
+    ]
+  },
+  {
+    "id": "FS-2026-10-11-180219",
+    "name": "Fusion Batch",
+    "status": "completed",
+    "createdOn": "11 Oct 2026, 06.02 PM",
+    "palluCount": 1,
+    "borderCount": 1,
+    "bodyCount": 1,
+    "totalDesigns": 1,
+    "generatedDesigns": 1,
+    "extraCount": 0,
+    "description": "",
+    "engine": "Google Gemini Multimodal AI (Vertex AI)",
+    "thumbnails": [
+      "/api/static/batches/FS-2026-10-11-180219/design_0_wearable.png"
+    ],
+    "uploadedComponents": {
+      "pallu": [
+        {
+          "label": "P1",
+          "image": "/api/static/batches/FS-2026-10-11-180219/uploads/pallu_0.jpg"
+        }
+      ],
+      "border": [
+        {
+          "label": "B1",
+          "image": "/api/static/batches/FS-2026-10-11-180219/uploads/border_0.png"
+        }
+      ],
+      "body": [
+        {
+          "label": "B1",
+          "image": "/api/static/batches/FS-2026-10-11-180219/uploads/body_0.jpg"
+        }
+      ]
+    },
+    "designs": [
+      {
+        "id": "FS-2026-10-11-180219-001",
+        "name": "Fusion Design P1-B1-B1",
+        "image": "/api/static/batches/FS-2026-10-11-180219/design_0_wearable.png",
+        "templateImage": "/api/static/batches/FS-2026-10-11-180219/design_0_template.png",
+        "tags": [
+          "P1",
+          "B1",
+          "B1"
+        ],
+        "matchPercent": "98% Match",
+        "engine": "Google Gemini Multimodal AI (Vertex AI)"
+      }
+    ]
+  },
+  {
     "id": "FS-2026-10-11-163703",
     "name": "Fusion Batch",
     "status": "completed",

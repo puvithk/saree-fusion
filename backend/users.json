@@ -1,0 +1,10 @@
+[
+  {
+    "id": "360d9a3e-9b41-4588-b57c-a85dd6c38b06",
+    "name": "Weaver",
+    "email": "weaver@example.com",
+    "phone": "9876543210",
+    "password_hash": "ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f",
+    "created_at": "2026-10-11T09:48:56.592138"
+  }
+]

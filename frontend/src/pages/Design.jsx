@@ -185,7 +185,7 @@ export default function Design() {
   };
 
   const totalUploads = uploads.pallu.length + uploads.border.length + uploads.body.length;
-  const canGenerate = uploads.pallu.length > 0 || uploads.border.length > 0;
+  const canGenerate = uploads.pallu.length > 0 || uploads.border.length > 0 || uploads.body.length > 0;
 
   const handleGenerate = async () => {
     if (!canGenerate || isGenerating) return;
@@ -347,10 +347,10 @@ export default function Design() {
           onClick={handleGenerate}
           disabled={!canGenerate || isGenerating}
         >
-          <HiOutlineSparkles /> {isGenerating ? 'Generating...' : 'Generate Fusion'}
+          <HiOutlineSparkles /> {isGenerating ? 'Synthesizing with Gemini AI...' : 'Generate AI Fusion Saree'}
         </button>
         {!canGenerate && (
-          <p className="generate-hint">Upload at least one Pallu or Border image to generate</p>
+          <p className="generate-hint">Upload at least one Pallu, Border, or Body image to generate</p>
         )}
       </div>
     </div>

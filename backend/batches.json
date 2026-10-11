@@ -1,5 +1,479 @@
 [
   {
+    "id": "FS-2026-10-11-163703",
+    "name": "Fusion Batch",
+    "status": "completed",
+    "createdOn": "11 Oct 2026, 04.37 PM",
+    "palluCount": 1,
+    "borderCount": 1,
+    "bodyCount": 1,
+    "totalDesigns": 1,
+    "generatedDesigns": 1,
+    "extraCount": 0,
+    "description": "Handloom silk saree with gold zari border and rich pallu",
+    "engine": "SareeFusion Studio Engine",
+    "thumbnails": [
+      "/api/static/batches/FS-2026-10-11-163703/design_0_wearable.png"
+    ],
+    "uploadedComponents": {
+      "pallu": [
+        {
+          "label": "P1",
+          "image": "/api/static/batches/FS-2026-10-11-163703/uploads/pallu_0.png"
+        }
+      ],
+      "border": [
+        {
+          "label": "B1",
+          "image": "/api/static/batches/FS-2026-10-11-163703/uploads/border_0.png"
+        }
+      ],
+      "body": [
+        {
+          "label": "B1",
+          "image": "/api/static/batches/FS-2026-10-11-163703/uploads/body_0.png"
+        }
+      ]
+    },
+    "designs": [
+      {
+        "id": "FS-2026-10-11-163703-001",
+        "name": "Fusion Design P1-B1-B1",
+        "image": "/api/static/batches/FS-2026-10-11-163703/design_0_wearable.png",
+        "templateImage": "/api/static/batches/FS-2026-10-11-163703/design_0_template.png",
+        "tags": [
+          "P1",
+          "B1",
+          "B1"
+        ],
+        "matchPercent": "98% Match",
+        "engine": "SareeFusion Studio Engine"
+      }
+    ]
+  },
+  {
+    "id": "FS-2026-10-11-163036",
+    "name": "Fusion Batch",
+    "status": "completed",
+    "createdOn": "11 Oct 2026, 04.30 PM",
+    "palluCount": 1,
+    "borderCount": 1,
+    "bodyCount": 1,
+    "totalDesigns": 1,
+    "generatedDesigns": 1,
+    "extraCount": 0,
+    "description": "",
+    "engine": "SareeFusion Studio Engine",
+    "thumbnails": [
+      "/api/static/batches/FS-2026-10-11-163036/design_0_wearable.png"
+    ],
+    "uploadedComponents": {
+      "pallu": [
+        {
+          "label": "P1",
+          "image": "/api/static/batches/FS-2026-10-11-163036/uploads/pallu_0.jpg"
+        }
+      ],
+      "border": [
+        {
+          "label": "B1",
+          "image": "/api/static/batches/FS-2026-10-11-163036/uploads/border_0.png"
+        }
+      ],
+      "body": [
+        {
+          "label": "B1",
+          "image": "/api/static/batches/FS-2026-10-11-163036/uploads/body_0.jpeg"
+        }
+      ]
+    },
+    "designs": [
+      {
+        "id": "FS-2026-10-11-163036-001",
+        "name": "Fusion Design P1-B1-B1",
+        "image": "/api/static/batches/FS-2026-10-11-163036/design_0_wearable.png",
+        "templateImage": "/api/static/batches/FS-2026-10-11-163036/design_0_template.png",
+        "tags": [
+          "P1",
+          "B1",
+          "B1"
+        ],
+        "matchPercent": "98% Match",
+        "engine": "SareeFusion Studio Engine"
+      }
+    ]
+  },
+  {
+    "id": "FS-2026-10-11-161508",
+    "name": "Fusion Batch",
+    "status": "completed",
+    "createdOn": "11 Oct 2026, 04.15 PM",
+    "palluCount": 1,
+    "borderCount": 1,
+    "bodyCount": 1,
+    "totalDesigns": 1,
+    "generatedDesigns": 1,
+    "extraCount": 0,
+    "description": "Handloom silk saree with gold zari border and rich pallu",
+    "engine": "SareeFusion Studio Engine",
+    "thumbnails": [
+      "/api/static/batches/FS-2026-10-11-161508/design_0_wearable.png"
+    ],
+    "uploadedComponents": {
+      "pallu": [
+        {
+          "label": "P1",
+          "image": "/api/static/batches/FS-2026-10-11-161508/uploads/pallu_0.png"
+        }
+      ],
+      "border": [
+        {
+          "label": "B1",
+          "image": "/api/static/batches/FS-2026-10-11-161508/uploads/border_0.png"
+        }
+      ],
+      "body": [
+        {
+          "label": "B1",
+          "image": "/api/static/batches/FS-2026-10-11-161508/uploads/body_0.png"
+        }
+      ]
+    },
+    "designs": [
+      {
+        "id": "FS-2026-10-11-161508-001",
+        "name": "Fusion Design P1-B1-B1",
+        "image": "/api/static/batches/FS-2026-10-11-161508/design_0_wearable.png",
+        "templateImage": "/api/static/batches/FS-2026-10-11-161508/design_0_template.png",
+        "tags": [
+          "P1",
+          "B1",
+          "B1"
+        ],
+        "matchPercent": "98% Match",
+        "engine": "SareeFusion Studio Engine"
+      }
+    ]
+  },
+  {
+    "id": "FS-2026-10-11-160343",
+    "name": "Fusion Batch",
+    "status": "completed",
+    "createdOn": "11 Oct 2026, 04.03 PM",
+    "palluCount": 1,
+    "borderCount": 1,
+    "bodyCount": 1,
+    "totalDesigns": 1,
+    "generatedDesigns": 1,
+    "extraCount": 0,
+    "description": "Royal Kanjivaram silk saree with authentic gold zari border and rich peacock motif pallu",
+    "engine": "SareeFusion Studio Engine",
+    "thumbnails": [
+      "/api/static/batches/FS-2026-10-11-160343/design_0_wearable.png"
+    ],
+    "uploadedComponents": {
+      "pallu": [
+        {
+          "label": "P1",
+          "image": "/api/static/batches/FS-2026-10-11-160343/uploads/pallu_0.png"
+        }
+      ],
+      "border": [
+        {
+          "label": "B1",
+          "image": "/api/static/batches/FS-2026-10-11-160343/uploads/border_0.png"
+        }
+      ],
+      "body": [
+        {
+          "label": "B1",
+          "image": "/api/static/batches/FS-2026-10-11-160343/uploads/body_0.png"
+        }
+      ]
+    },
+    "designs": [
+      {
+        "id": "FS-2026-10-11-160343-001",
+        "name": "Fusion Design P1-B1-B1",
+        "image": "/api/static/batches/FS-2026-10-11-160343/design_0_wearable.png",
+        "templateImage": "/api/static/batches/FS-2026-10-11-160343/design_0_template.png",
+        "tags": [
+          "P1",
+          "B1",
+          "B1"
+        ],
+        "matchPercent": "98% Match",
+        "engine": "SareeFusion Studio Engine"
+      }
+    ]
+  },
+  {
+    "id": "FS-2026-10-11-153831",
+    "name": "Fusion Batch",
+    "status": "completed",
+    "createdOn": "11 Oct 2026, 03.38 PM",
+    "palluCount": 1,
+    "borderCount": 1,
+    "bodyCount": 1,
+    "totalDesigns": 1,
+    "generatedDesigns": 1,
+    "extraCount": 0,
+    "description": "",
+    "engine": "SareeFusion Studio Engine",
+    "thumbnails": [
+      "/api/static/batches/FS-2026-10-11-153831/design_0_wearable.png"
+    ],
+    "uploadedComponents": {
+      "pallu": [
+        {
+          "label": "P1",
+          "image": "/api/static/batches/FS-2026-10-11-153831/uploads/pallu_0.jpg"
+        }
+      ],
+      "border": [
+        {
+          "label": "B1",
+          "image": "/api/static/batches/FS-2026-10-11-153831/uploads/border_0.jpg"
+        }
+      ],
+      "body": [
+        {
+          "label": "B1",
+          "image": "/api/static/batches/FS-2026-10-11-153831/uploads/body_0.jpeg"
+        }
+      ]
+    },
+    "designs": [
+      {
+        "id": "FS-2026-10-11-153831-001",
+        "name": "Fusion Design P1-B1-B1",
+        "image": "/api/static/batches/FS-2026-10-11-153831/design_0_wearable.png",
+        "templateImage": "/api/static/batches/FS-2026-10-11-153831/design_0_template.png",
+        "tags": [
+          "P1",
+          "B1",
+          "B1"
+        ],
+        "matchPercent": "98% Match",
+        "engine": "SareeFusion Studio Engine"
+      }
+    ]
+  },
+  {
+    "id": "FS-2026-10-11-153558",
+    "name": "Fusion Batch",
+    "status": "completed",
+    "createdOn": "11 Oct 2026, 03.35 PM",
+    "palluCount": 1,
+    "borderCount": 1,
+    "bodyCount": 1,
+    "totalDesigns": 1,
+    "generatedDesigns": 1,
+    "extraCount": 0,
+    "description": "Royal cyan Banarasi silk saree with pink border and peach pallu",
+    "engine": "SareeFusion Studio Engine",
+    "thumbnails": [
+      "/api/static/batches/FS-2026-10-11-153558/design_0_wearable.png"
+    ],
+    "uploadedComponents": {
+      "pallu": [
+        {
+          "label": "P1",
+          "image": "/api/static/batches/FS-2026-10-11-153558/uploads/pallu_0.jpg"
+        }
+      ],
+      "border": [
+        {
+          "label": "B1",
+          "image": "/api/static/batches/FS-2026-10-11-153558/uploads/border_0.jpg"
+        }
+      ],
+      "body": [
+        {
+          "label": "B1",
+          "image": "/api/static/batches/FS-2026-10-11-153558/uploads/body_0.jpg"
+        }
+      ]
+    },
+    "designs": [
+      {
+        "id": "FS-2026-10-11-153558-001",
+        "name": "Fusion Design P1-B1-B1",
+        "image": "/api/static/batches/FS-2026-10-11-153558/design_0_wearable.png",
+        "templateImage": "/api/static/batches/FS-2026-10-11-153558/design_0_template.png",
+        "tags": [
+          "P1",
+          "B1",
+          "B1"
+        ],
+        "matchPercent": "98% Match",
+        "engine": "SareeFusion Studio Engine"
+      }
+    ]
+  },
+  {
+    "id": "FS-2026-10-11-152126",
+    "name": "Fusion Batch",
+    "status": "completed",
+    "createdOn": "11 Oct 2026, 03.21 PM",
+    "palluCount": 1,
+    "borderCount": 1,
+    "bodyCount": 1,
+    "totalDesigns": 1,
+    "generatedDesigns": 1,
+    "extraCount": 0,
+    "description": "",
+    "engine": "Local Fusion Engine",
+    "thumbnails": [
+      "/api/static/batches/FS-2026-10-11-152126/design_0_wearable.png"
+    ],
+    "uploadedComponents": {
+      "pallu": [
+        {
+          "label": "P1",
+          "image": "/api/static/batches/FS-2026-10-11-152126/uploads/pallu_0.png"
+        }
+      ],
+      "border": [
+        {
+          "label": "B1",
+          "image": "/api/static/batches/FS-2026-10-11-152126/uploads/border_0.png"
+        }
+      ],
+      "body": [
+        {
+          "label": "B1",
+          "image": "/api/static/batches/FS-2026-10-11-152126/uploads/body_0.png"
+        }
+      ]
+    },
+    "designs": [
+      {
+        "id": "FS-2026-10-11-152126-001",
+        "name": "Fusion Saree (Cyan Body, Pink Border, Peach Pallu)",
+        "image": "/api/static/batches/FS-2026-10-11-152126/design_0_wearable.png",
+        "templateImage": "/api/static/batches/FS-2026-10-11-152126/design_0_template.png",
+        "tags": [
+          "PALLU",
+          "BORDER",
+          "BODY"
+        ],
+        "matchPercent": "99% Match",
+        "engine": "Google Gemini Nano Banana & SareeFusion Studio"
+      }
+    ]
+  },
+  {
+    "id": "FS-2026-10-11-151330",
+    "name": "Fusion Batch",
+    "status": "completed",
+    "createdOn": "11 Oct 2026, 03.13 PM",
+    "palluCount": 0,
+    "borderCount": 0,
+    "bodyCount": 0,
+    "totalDesigns": 1,
+    "generatedDesigns": 1,
+    "extraCount": 0,
+    "description": "Rich royal silk saree with golden peacock border",
+    "engine": "Local Fusion Engine",
+    "thumbnails": [
+      "/api/static/batches/FS-2026-10-11-151330/design_0_wearable.png"
+    ],
+    "uploadedComponents": {
+      "pallu": [
+        {
+          "label": "P1",
+          "path": "F:\\saree-fusion\\backend\\static\\assets\\pallu-swatch.png",
+          "url": "/api/static/assets/pallu-swatch.png"
+        }
+      ],
+      "border": [
+        {
+          "label": "BR1",
+          "path": "F:\\saree-fusion\\backend\\static\\assets\\border-swatch.png",
+          "url": "/api/static/assets/border-swatch.png"
+        }
+      ],
+      "body": [
+        {
+          "label": "B1",
+          "path": "F:\\saree-fusion\\backend\\static\\assets\\body-swatch.png",
+          "url": "/api/static/assets/body-swatch.png"
+        }
+      ]
+    },
+    "designs": [
+      {
+        "id": "FS-2026-10-11-151330-001",
+        "name": "Fusion Design P1-BR1-B1",
+        "image": "/api/static/batches/FS-2026-10-11-151330/design_0_wearable.png",
+        "templateImage": "/api/static/batches/FS-2026-10-11-151330/design_0_template.png",
+        "tags": [
+          "P1",
+          "BR1",
+          "B1"
+        ],
+        "matchPercent": "95% Match",
+        "engine": "Local Fusion Engine"
+      }
+    ]
+  },
+  {
+    "id": "FS-2026-10-11-150041",
+    "name": "Fusion Batch",
+    "status": "completed",
+    "createdOn": "11 Oct 2026, 03.00 PM",
+    "palluCount": 0,
+    "borderCount": 0,
+    "bodyCount": 0,
+    "totalDesigns": 1,
+    "generatedDesigns": 1,
+    "extraCount": 0,
+    "description": "Test silk saree with gold border",
+    "engine": "Local Fusion Engine",
+    "thumbnails": [
+      "/api/static/batches/FS-2026-10-11-150041/design_0_wearable.png"
+    ],
+    "uploadedComponents": {
+      "pallu": [
+        {
+          "label": "P1",
+          "path": "F:\\saree-fusion\\backend\\static\\assets\\pallu-swatch.png",
+          "url": "/api/static/assets/pallu-swatch.png"
+        }
+      ],
+      "border": [
+        {
+          "label": "BR1",
+          "path": "F:\\saree-fusion\\backend\\static\\assets\\border-swatch.png",
+          "url": "/api/static/assets/border-swatch.png"
+        }
+      ],
+      "body": [
+        {
+          "label": "B1",
+          "path": "F:\\saree-fusion\\backend\\static\\assets\\body-swatch.png",
+          "url": "/api/static/assets/body-swatch.png"
+        }
+      ]
+    },
+    "designs": [
+      {
+        "id": "FS-2026-10-11-150041-001",
+        "name": "Fusion Design P1-BR1-B1",
+        "image": "/api/static/batches/FS-2026-10-11-150041/design_0_wearable.png",
+        "templateImage": "/api/static/batches/FS-2026-10-11-150041/design_0_template.png",
+        "tags": [
+          "P1",
+          "BR1",
+          "B1"
+        ],
+        "matchPercent": "95% Match",
+        "engine": "Local Fusion Engine"
+      }
+    ]
+  },
+  {
     "id": "FS-2026-07-22-215859",
     "name": "Fusion Batch",
     "status": "completed",

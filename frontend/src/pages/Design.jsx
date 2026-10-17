@@ -1,9 +1,7 @@
 import { useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { FiUploadCloud, FiX, FiImage } from 'react-icons/fi';
-import { HiOutlineSparkles } from 'react-icons/hi';
 import sareesilhouette from '../assets/saree-silhouette.png';
-import { API_BASE_URL } from '../config';
+import SareeGeneratorButton from '../components/saree/SareeGeneratorButton';
 
 import redSaree from '../assets/red-saree.png';
 import silkSaree from '../assets/silk-saree.png';
@@ -145,14 +143,12 @@ function UploadCard({ type, files, onFilesAdd, onFileRemove }) {
 }
 
 export default function Design() {
-  const navigate = useNavigate();
   const [uploads, setUploads] = useState({
     pallu: [],
     border: [],
     body: [],
   });
   const [description, setDescription] = useState('');
-  const [isGenerating, setIsGenerating] = useState(false);
   const [selectedStyle, setSelectedStyle] = useState('normal'); // 'normal' | 'mysore' | 'kadagu'
   const [selectedModel, setSelectedModel] = useState('model_1'); // 'model_1' | 'model_2' | 'model_3'
 
@@ -186,37 +182,6 @@ export default function Design() {
 
   const totalUploads = uploads.pallu.length + uploads.border.length + uploads.body.length;
   const canGenerate = uploads.pallu.length > 0 || uploads.border.length > 0 || uploads.body.length > 0;
-
-  const handleGenerate = async () => {
-    if (!canGenerate || isGenerating) return;
-    setIsGenerating(true);
-    try {
-      const formData = new FormData();
-      uploads.pallu.forEach((item) => formData.append('pallu', item.file));
-      uploads.border.forEach((item) => formData.append('border', item.file));
-      uploads.body.forEach((item) => formData.append('body', item.file));
-      formData.append('description', description);
-      formData.append('style', selectedStyle);
-      formData.append('model', selectedModel);
-
-      const response = await fetch(`${API_BASE_URL}/api/generate`, {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to generate fusion design');
-      }
-
-      const data = await response.json();
-      navigate(`/collections/batch/${data.id}`);
-    } catch (err) {
-      console.error(err);
-      alert('Error generating design fusion. Please try again.');
-    } finally {
-      setIsGenerating(false);
-    }
-  };
 
   return (
     <div className="design-page">
@@ -341,18 +306,12 @@ export default function Design() {
       </div>
 
       {/* Generate Button */}
-      <div className="design-generate-section">
-        <button
-          className={`generate-fusion-btn ${(!canGenerate || isGenerating) ? 'disabled' : ''}`}
-          onClick={handleGenerate}
-          disabled={!canGenerate || isGenerating}
-        >
-          <HiOutlineSparkles /> {isGenerating ? 'Synthesizing with Gemini AI...' : 'Generate AI Fusion Saree'}
-        </button>
-        {!canGenerate && (
-          <p className="generate-hint">Upload at least one Pallu, Border, or Body image to generate</p>
-        )}
-      </div>
+      <SareeGeneratorButton
+        uploads={uploads}
+        style={selectedStyle}
+        description={description}
+        canGenerate={canGenerate}
+      />
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Home from './pages/Home';
@@ -8,16 +8,19 @@ import DesignDetails from './pages/DesignDetails';
 import Sarees from './pages/Sarees';
 import Design from './pages/Design';
 import WeaverDashboard from './pages/WeaverDashboard';
+import Simulation from './pages/Simulation';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './context/AuthContext.jsx';
+import { SareeDesignProvider } from './context/SareeDesignContext.jsx';
 import './App.css';
 
 function App() {
   return (
     <Router>
       <AuthProvider>
+      <SareeDesignProvider>
         <div className="app">
           <Navbar />
           <main className="main-content">
@@ -34,10 +37,14 @@ function App() {
               <Route path="/sarees" element={<ProtectedRoute><Sarees /></ProtectedRoute>} />
               <Route path="/design" element={<ProtectedRoute><Design /></ProtectedRoute>} />
               <Route path="/weaver" element={<ProtectedRoute><WeaverDashboard /></ProtectedRoute>} />
+              <Route path="/simulation" element={<ProtectedRoute><Simulation /></ProtectedRoute>} />
+              <Route path="/layout-creator" element={<Navigate to="/simulation" replace />} />
+              <Route path="/layout" element={<Navigate to="/simulation" replace />} />
             </Routes>
           </main>
           <Footer />
         </div>
+      </SareeDesignProvider>
       </AuthProvider>
     </Router>
   );

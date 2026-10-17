@@ -10,18 +10,18 @@ import cv2
 import numpy as np
 import json
 from PIL import Image
-from saree_generator import GenerateSaree, GenerateComplete
-
-# Initialize generators ported from puvithk/sareeFusion
-generateSaree = GenerateSaree()
-generetorFull = GenerateComplete()
-
-# Load .env file if python-dotenv is available
+# Load .env file before anything else
 try:
     from dotenv import load_dotenv
     load_dotenv()
 except ImportError:
-    pass  # python-dotenv not installed, rely on real environment variables
+    pass
+
+from saree_generator import GenerateSaree, GenerateComplete
+
+# Initialize generators
+generateSaree = GenerateSaree()
+generetorFull = GenerateComplete()
 
 # ---------------------------------------------------------------------------
 # Auth feature flag
@@ -352,14 +352,12 @@ def generate_ai_saree(body_path, pallu_path, border_path, description, style, we
         print("Successfully generated complete wearable saree via Google Gemini Multimodal AI!")
         return True, "Google Gemini Multimodal AI"
 
-    # Step 4: Clean studio reference fallback (without distorted masks)
-    print("Gemini model output unavailable or rate-limited. Using clean studio mannequin presentation.")
-    demo_ref_wearable = os.path.join(STATIC_DIR, "demo_reference", "wearable_output.jpg")
-    if os.path.exists(demo_ref_wearable):
+    # Fallback: Synthesize wearable drape with actual uploaded fabrics
+    print("Synthesizing realistic studio saree with uploaded fabrics...")
+    synthesized = synthesize_realistic_wearable(body_path, pallu_path, border_path, wearable_out_path)
+    if not synthesized and os.path.exists(demo_ref_wearable):
         shutil.copy(demo_ref_wearable, wearable_out_path)
-    else:
-        synthesize_realistic_wearable(body_path, pallu_path, border_path, wearable_out_path)
-    return False, "SareeFusion Studio Engine (Studio fallback)"
+    return False, "SareeFusion Studio Engine"
 
 # --- Database helpers ---
 

@@ -186,23 +186,25 @@ class GenerateComplete:
         self._init_client()
 
     def _init_client(self):
-        api_key = os.environ.get("GOOGLE_CLOUD_API_KEY") or os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
-        if not api_key:
-            print("GenerateComplete: No API key configured.")
-            return
-
-        api_key = api_key.strip()
         try:
             from google import genai
-            env_project = os.environ.get("GOOGLE_CLOUD_PROJECT") or os.environ.get("GCP_PROJECT")
-            if env_project and env_project.strip() and env_project.strip() != "sareefusion":
-                self.client = genai.Client(vertexai=True, api_key=api_key, project=env_project.strip())
-                print(f"GenerateComplete: Initialized Vertex AI Client with project '{env_project}'.")
+            project = os.environ.get("GOOGLE_CLOUD_PROJECT", "project-0040f2f2-3458-4658-848").strip()
+            location = os.environ.get("GOOGLE_CLOUD_LOCATION", "us-central1").strip()
+            try:
+                self.client = genai.Client(vertexai=True, project=project, location=location)
+                print(f"GenerateComplete: Initialized Vertex AI Client (project='{project}', location='{location}').")
+                return
+            except Exception as ve:
+                print(f"GenerateComplete: Vertex AI init failed ({ve}), trying API key mode...")
+
+            api_key = os.environ.get("GOOGLE_CLOUD_API_KEY") or os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+            if api_key:
+                self.client = genai.Client(api_key=api_key.strip())
+                print("GenerateComplete: Initialized Google GenAI Client (AI Studio fallback).")
             else:
-                self.client = genai.Client(api_key=api_key)
-                print("GenerateComplete: Initialized Google GenAI Client (AI Studio mode).")
+                print("GenerateComplete: No credentials available.")
         except Exception as e:
-            print(f"GenerateComplete: Failed to initialize genai.Client: {e}")
+            print(f"GenerateComplete: Failed to initialize: {e}")
             self.client = None
 
     def predict(self, border_img, pallu_img, body_img, custom_prompt="", aspect_ratio_img=None):
@@ -255,12 +257,12 @@ class GenerateComplete:
             contents.append("Mannequin drape pose reference:")
             contents.append(aspect_ratio_img.convert("RGB") if hasattr(aspect_ratio_img, "convert") else aspect_ratio_img)
 
-        # Candidate models to try in order
+        # Candidate models to try in order (gemini-2.5-flash-image verified active on Vertex AI)
         candidate_models = [
             "gemini-2.5-flash-image",
-            "gemini-3-pro-image-preview",
             "gemini-3.1-flash-image",
-            "gemini-3-pro-image"
+            "gemini-3.1-flash-lite-image",
+            "gemini-3-pro-image",
         ]
 
         for model_name in candidate_models:

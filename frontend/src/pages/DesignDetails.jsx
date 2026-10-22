@@ -6,6 +6,7 @@ import SareeCard from '../components/SareeCard';
 import Pagination from '../components/Pagination';
 import sareesilhouette from '../assets/saree-silhouette.png';
 import { materials } from '../data/mockData';
+import ImageViewer from '../components/ImageViewer';
 import { API_BASE_URL } from '../config';
 
 export default function DesignDetails() {
@@ -388,7 +389,11 @@ export default function DesignDetails() {
             <button className="gallery-arrow left" onClick={() => setCurrentImage(Math.max(0, currentImage - 1))}>
               <FiChevronLeft />
             </button>
-            <img src={thumbnails[currentImage]} alt="Saree View" className="gallery-main-img" />
+            {currentImage === 1 ? (
+              <ImageViewer src={thumbnails[1]} alt="Flat handloom template" height="100%" />
+            ) : (
+              <img src={thumbnails[currentImage]} alt="Saree View" className="gallery-main-img" />
+            )}
             <button className="gallery-arrow right" onClick={() => setCurrentImage(Math.min(thumbnails.length - 1, currentImage + 1))}>
               <FiChevronRight />
             </button>

@@ -541,6 +541,12 @@ def generate():
         scroll_path=scroll_primary
     )
 
+    # Template drawn by the Simulation studio (continuous warp borders, pallu as
+    # weft between them) takes precedence over the generated flat layout
+    sim_template = request.files.get("template")
+    if sim_template and sim_template.filename:
+        sim_template.save(template_out)
+
     if ai_success:
         gen_engine = "Google Gemini Multimodal AI"
         match_score = "99% AI Match"
@@ -1060,6 +1066,72 @@ def delete_order(order_id):
             print(f"Error removing order directory {order_dir}: {e}")
             
     return jsonify({"success": True, "message": f"Order {order_id} deleted successfully"})
+
+
+# ===========================================================================
+# SAVED SIMULATIONS (per-user collection of finished simulations)
+# ===========================================================================
+
+SIMULATIONS_JSON = os.path.join(BASE_DIR, "simulations.json")
+
+
+def load_simulations():
+    if not os.path.exists(SIMULATIONS_JSON):
+        return []
+    try:
+        with open(SIMULATIONS_JSON, 'r') as f:
+            return json.load(f)
+    except Exception as e:
+        print("Error reading simulations.json:", e)
+        return []
+
+
+def save_simulations(sims):
+    try:
+        with open(SIMULATIONS_JSON, 'w') as f:
+            json.dump(sims, f, indent=2)
+    except Exception as e:
+        print("Error writing simulations.json:", e)
+
+
+def _sim_owner():
+    return (request.args.get('owner') or 'guest').strip().lower()
+
+
+@app.route('/api/simulations', methods=['GET'])
+def get_simulations():
+    """Lists the owner's saved simulations, newest first."""
+    owner = _sim_owner()
+    sims = [s for s in load_simulations() if s.get("owner") == owner]
+    sims.sort(key=lambda s: s.get("savedAt", ""), reverse=True)
+    return jsonify(sims)
+
+
+@app.route('/api/simulations', methods=['POST'])
+def upsert_simulation():
+    """Inserts or replaces a simulation by id (one entry per simulation session)."""
+    # sendBeacon posts as text/plain, so parse regardless of content type
+    data = request.get_json(force=True, silent=True) or {}
+    sim_id = data.get("id")
+    if not sim_id:
+        return jsonify({"error": "id is required"}), 400
+    data["owner"] = (data.get("owner") or 'guest').strip().lower()
+    sims = [s for s in load_simulations() if s.get("id") != sim_id]
+    sims.append(data)
+    save_simulations(sims)
+    return jsonify({"success": True, "id": sim_id})
+
+
+@app.route('/api/simulations/<sim_id>', methods=['DELETE'])
+def delete_simulation(sim_id):
+    """Deletes one of the owner's saved simulations."""
+    owner = _sim_owner()
+    sims = load_simulations()
+    kept = [s for s in sims if not (s.get("id") == sim_id and s.get("owner") == owner)]
+    if len(kept) == len(sims):
+        return jsonify({"error": "Simulation not found"}), 404
+    save_simulations(kept)
+    return jsonify({"success": True})
 
 
 # ===========================================================================

@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { upsertSavedSimulation } from '../../utils/savedSimulations';
 
-const THUMB_MAX = 480; // longest side, px
+const THUMB_MAX = 1400; // longest side, px — large enough for the enlarged view
 
 function makeThumbnail(canvas) {
   const t = document.createElement('canvas');
@@ -11,12 +11,12 @@ function makeThumbnail(canvas) {
   t.width = Math.max(1, Math.round(canvas.width * k));
   t.height = Math.max(1, Math.round(canvas.height * k));
   t.getContext('2d').drawImage(canvas, 0, 0, t.width, t.height);
-  return t.toDataURL('image/jpeg', 0.75);
+  return t.toDataURL('image/jpeg', 0.85);
 }
 
 // ─── CollectionAutoSaver ─────────────────────────────────────────────────────
 // Renders nothing. Tracks the latest simulation config and persists it to the
-// user's Saved Collections when the simulation unmounts (Back / Exit / route
+// user's Saved Collections in the backend database when the simulation unmounts (Back / Exit / route
 // change) or the tab is closed — no manual save prompt.
 // Saves only if the session has real content: handed-over assets or edits.
 export default function CollectionAutoSaver({ canvasRef, config, hasAssets }) {

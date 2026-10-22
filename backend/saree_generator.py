@@ -13,11 +13,24 @@ load_dotenv()
 
 class GenerateSaree:
     """
-    Builds the flat handloom weaving template (Output 2):
-    - Continuous top and bottom borders along full width
-    - Clean seamless body fabric tiling across body field
-    - Pallu design aligned on right side
+    Builds the flat handloom weaving template (Output 2), landscape, CAD layout:
+    - Border track along the top and bottom edges across 100% of the length
+      (body AND pallu), in the swatch's natural 0 degree orientation
+    - Body fabric tiled across the body field
+    - Pallu panel at the right end (pallu_side="left" to mirror)
+
+    Two modes:
+    - refine=False (default, initial assembly): a faithful mapping of the raw
+      uploads. No rotation, flip, skew, colour correction, feathering or sheen;
+      every image is only scaled uniformly (aspect ratio preserved) to fit its
+      track. Adjustments belong to the interactive simulation studio.
+    - refine=True: CLAHE colour tuning, alpha-ramp cross-fades at every
+      junction and a silk sheen, for an explicitly requested polished render.
     """
+    BORDER_FRAC = 0.12   # border track height as a fraction of template height
+    FEATHER_PX = 18      # linear transparency ramp at every junction
+    PALLU_BLEND_PX = 48  # wider cross-fade where pallu meets body
+
     def __init__(self):
         pass
 
@@ -31,138 +44,144 @@ class GenerateSaree:
         enhanced = cv2.cvtColor(lab_clahe, cv2.COLOR_LAB2RGB)
         return Image.fromarray(enhanced)
 
-    def tempelete(self, border, pallu, body, saree_width=960, saree_height=1800):
+    def tempelete(self, border, pallu, body, saree_length=2160, saree_height=480,
+                  pallu_frac=45.6 / 216, pallu_side="right", refine=False):
         """
-        Portrait-oriented weaving template matching standard saree CAD layout:
-        - Narrow ornate border strips on LEFT and RIGHT edges (full height)
-        - PALLU panel at the top (~46% of center height)
-        - BODY fabric tiled at the bottom (~54% of center height)
-        - Gradient blend at pallu→body junction, softened border seams, silk sheen
+        Landscape template at true saree proportions (default 216" x 48" at 10 px/in).
+
+        Geometry:
+          border_h = BORDER_FRAC * saree_height, top and bottom, full length
+          pallu    = at one end; body fills the rest
+        Raw mode (default):
+          - images are used in their uploaded orientation (EXIF is not applied,
+            nothing is rotated or flipped) and only scaled uniformly
+          - pallu keeps its own aspect ratio: scaled to the field height, its
+            width follows (capped at half the length, then fitted inside)
+          - tiles butt together exactly; no blending of any kind
+        Refine mode adds:
+          - body/pallu extend FEATHER_PX under each border; the border's inner
+            FEATHER_PX rows ramp 1 -> 0 alpha over them
+          - body and border tiles overlap by FEATHER_PX with complementary weights
+          - pallu stretched to pallu_frac and cross-fades into the body
         """
-        border = self.apply_clahe(border.convert("RGB"), 1.0)
-        pallu  = self.apply_clahe(pallu.convert("RGB"),  1.2)
-        body   = self.apply_clahe(body.convert("RGB"),   1.5)
+        border, pallu, body = border.convert("RGB"), pallu.convert("RGB"), body.convert("RGB")
+        if refine:
+            border = self.apply_clahe(border, 1.0)
+            pallu  = self.apply_clahe(pallu,  1.2)
+            body   = self.apply_clahe(body,   1.5)
 
-        border_w  = int(saree_width * 0.125)           # ~120px per side
-        center_w  = saree_width - 2 * border_w         # ~720px
-        pallu_h   = int(saree_height * 0.46)           # ~828px (top)
-        body_h    = saree_height - pallu_h             # ~972px (bottom)
-        blend_h   = 50    # gradient blend px at pallu→body junction
-        seam_blur = 10    # px for vertical border-center seam softening
+        L, H = int(saree_length), int(saree_height)
+        F = self.FEATHER_PX if refine else 0
+        border_h = max(F + 2, int(round(H * self.BORDER_FRAC)))
+        field_y0 = border_h - F            # refine: body/pallu run under the borders by F px
+        field_h  = H - 2 * border_h + 2 * F
+        if refine:
+            pallu_w = int(round(L * pallu_frac))
+        else:
+            pallu_w = min(L // 2, int(round(field_h * pallu.width / max(1, pallu.height))))
+        blend    = min(self.PALLU_BLEND_PX, pallu_w // 2) if refine else 0
 
-        # --- Border: scale to border_w wide; if input is landscape, rotate first ---
-        bimg = border
-        if bimg.width > bimg.height:
-            bimg = bimg.rotate(90, expand=True)
-        b_aspect  = bimg.height / max(1, bimg.width)
-        btile_h   = max(20, int(border_w * b_aspect))
-        border_tile = bimg.resize((border_w, btile_h), Image.Resampling.LANCZOS)
-        border_strip = self._tile_border_vertical(
-            np.array(border_tile), saree_height, border_w, btile_h
-        )
+        # --- Border track: natural 0 degree orientation, scaled to exactly border_h ---
+        b_aspect = border.width / max(1, border.height)
+        btile_w  = max(2 * F + 1, int(round(border_h * b_aspect)))
+        border_tile = np.asarray(border.resize((btile_w, border_h), Image.Resampling.LANCZOS),
+                                 dtype=np.float32)
+        border_track = self._tile_overlap(border_tile, L, border_h, ov_x=F, ov_y=0)
 
-        # --- Body tile: snap width so columns divide evenly into center_w ---
-        n_cols   = max(1, round(center_w / max(1, body.width)))
-        tile_w   = max(60, center_w // n_cols)
-        tile_h   = max(60, int(tile_w * (body.height / max(1, body.width))))
-        body_tile = body.resize((tile_w, tile_h), Image.Resampling.LANCZOS)
-        body_patch = self._tile_seamless_body(
-            np.array(body_tile), center_w, body_h, tile_w, tile_h
-        )
+        # --- Body tile: one tile spans the visible field height ---
+        visible_h = H - 2 * border_h
+        n_rows = 1  # one motif row across the width; repeats only along the length
+        tile_h = max(2 * F + 20, visible_h // n_rows + F)
+        tile_w = max(2 * F + 20, int(round(tile_h * body.width / max(1, body.height))))
+        body_tile = np.asarray(body.resize((tile_w, tile_h), Image.Resampling.LANCZOS),
+                               dtype=np.float32)
+        # Raw mode runs the body the full length so any space beside a fitted
+        # pallu shows body fabric, not an empty box
+        body_w = L - pallu_w + blend if refine else L
+        body_field = self._tile_overlap(body_tile, body_w, field_h, ov_x=F, ov_y=F)
 
-        # --- Pallu: resize to center_w × (pallu_h + blend_h) for gradient overlap ---
-        pallu_tall = np.array(
-            pallu.resize((center_w, pallu_h + blend_h), Image.Resampling.LANCZOS),
-            dtype=np.float32
-        )
+        # --- Assemble (float) ---
+        canvas = np.zeros((H, L, 3), dtype=np.float32)
+        body_x0 = pallu_w - blend if (refine and pallu_side == "left") else 0
+        pallu_x0 = 0 if pallu_side == "left" else L - pallu_w - blend
+        fy = slice(field_y0, field_y0 + field_h)
+        canvas[fy, body_x0:body_x0 + body_w] = body_field
 
-        # --- Gradient blend pallu→body at junction ---
-        alpha  = np.linspace(1.0, 0.0, blend_h, dtype=np.float32).reshape(blend_h, 1, 1)
-        body_f = body_patch.astype(np.float32)
-        blend_zone = (
-            pallu_tall[pallu_h:pallu_h + blend_h] * alpha +
-            body_f[:blend_h] * (1.0 - alpha)
-        )
-        pallu_f         = pallu_tall[:pallu_h].copy()
-        body_f[:blend_h] = blend_zone
+        if refine:
+            # Pallu stretched to its slot, cross-fading into the body
+            pallu_panel = np.asarray(pallu.resize((pallu_w + blend, field_h), Image.Resampling.LANCZOS),
+                                     dtype=np.float32)
+            pa = np.ones((1, pallu_w + blend, 1), dtype=np.float32)
+            if pallu_side == "left":
+                pa[0, -blend:, 0] = self._ramp(blend)[::-1]
+            else:
+                pa[0, :blend, 0] = self._ramp(blend)
+            px = slice(pallu_x0, pallu_x0 + pallu_w + blend)
+            canvas[fy, px] = pallu_panel * pa + canvas[fy, px] * (1.0 - pa)
+        else:
+            # Pallu as uploaded: uniform scale to fit its slot, centred vertically
+            k = min(pallu_w / max(1, pallu.width), field_h / max(1, pallu.height))
+            pw, ph = max(1, round(pallu.width * k)), max(1, round(pallu.height * k))
+            pallu_panel = np.asarray(pallu.resize((pw, ph), Image.Resampling.LANCZOS), dtype=np.float32)
+            px0 = 0 if pallu_side == "left" else L - pw
+            py0 = field_y0 + (field_h - ph) // 2
+            canvas[py0:py0 + ph, px0:px0 + pw] = pallu_panel
 
-        # --- Assemble canvas ---
-        canvas = np.full((saree_height, saree_width, 3), [245, 240, 235], dtype=np.float32)
-        canvas[:, 0:border_w]               = border_strip.astype(np.float32)
-        canvas[:, saree_width - border_w:]  = border_strip.astype(np.float32)
-        canvas[0:pallu_h,          border_w:saree_width - border_w] = pallu_f
-        canvas[pallu_h:saree_height, border_w:saree_width - border_w] = body_f
+        # Borders: the same unrotated, unflipped track at top and bottom.
+        # Refine mode fades the inner F rows over the field.
+        top_a = np.ones((border_h, 1, 1), dtype=np.float32)
+        if F:
+            top_a[-F:, 0, 0] = self._ramp(F)[::-1]
+        bot_a = top_a[::-1]
+        canvas[:border_h] = border_track * top_a + canvas[:border_h] * (1.0 - top_a)
+        canvas[H - border_h:] = border_track * bot_a + canvas[H - border_h:] * (1.0 - bot_a)
 
-        # --- Soften vertical border-center seams ---
-        canvas = self._soften_v_seam(canvas, border_w, seam_blur)
-        canvas = self._soften_v_seam(canvas, saree_width - border_w, seam_blur)
-
-        # --- Silk sheen overlay ---
-        canvas = self._silk_sheen(canvas)
-
+        if refine:
+            canvas = self._silk_sheen(canvas)
         return Image.fromarray(np.clip(canvas, 0, 255).astype(np.uint8))
 
-    def _tile_border_vertical(self, tile, target_h, border_w, tile_h):
-        """Tiles border vertically (for left/right side strips) with feathered seams."""
-        strip = np.zeros((target_h, border_w, 3), dtype=np.uint8)
-        for y in range(0, target_h, tile_h):
-            y2 = min(y + tile_h, target_h)
-            strip[y:y2, :] = tile[:y2 - y, :]
+    @staticmethod
+    def _ramp(n):
+        """Linear 0 -> 1 ramp of n samples (half-pixel centred, no hard endpoints)."""
+        return (np.arange(n, dtype=np.float32) + 0.5) / max(1, n)
 
-        feather = min(12, tile_h // 4)
-        if feather < 2:
-            return strip
+    def _tile_overlap(self, tile, target_w, target_h, ov_x, ov_y):
+        """
+        Tiles `tile` (h, w, 3 float) over target_w x target_h with neighbouring
+        tiles overlapping by ov_x / ov_y px. Each tile carries a weight window
+        that ramps linearly over its overlap edges, so neighbours cross-fade
+        with complementary weights (sum = 1): no visible tile boundaries.
+        The tile is never rotated or flipped.
+        """
+        th, tw = tile.shape[:2]
+        ov_x = min(ov_x, tw // 3)
+        ov_y = min(ov_y, th // 3)
+        wx = np.ones(tw, dtype=np.float32)
+        wy = np.ones(th, dtype=np.float32)
+        if ov_x:
+            wx[:ov_x] = self._ramp(ov_x)
+            wx[-ov_x:] = self._ramp(ov_x)[::-1]
+        if ov_y:
+            wy[:ov_y] = self._ramp(ov_y)
+            wy[-ov_y:] = self._ramp(ov_y)[::-1]
+        weight = (wy[:, None] * wx[None, :])[..., None]
 
-        result = strip.astype(np.float32)
-        for y in range(tile_h, target_h, tile_h):
-            y0 = max(0, y - feather)
-            y1 = min(target_h, y + feather)
-            k  = ((y1 - y0) | 1)
-            zone    = np.clip(result[y0:y1, :], 0, 255).astype(np.uint8)
-            blurred = cv2.GaussianBlur(zone, (1, k), k / 3.0)
-            result[y0:y1, :] = blurred.astype(np.float32)
-        return np.clip(result, 0, 255).astype(np.uint8)
-
-    def _tile_seamless_body(self, tile, target_w, target_h, tile_w, tile_h):
-        """Tiles body fabric and feathers every seam to hide hard edges."""
-        patch = np.zeros((target_h, target_w, 3), dtype=np.uint8)
-        for y in range(0, target_h, tile_h):
-            for x in range(0, target_w, tile_w):
-                y2 = min(y + tile_h, target_h)
-                x2 = min(x + tile_w, target_w)
-                patch[y:y2, x:x2] = tile[:y2 - y, :x2 - x]
-
-        feather = min(14, tile_w // 5, tile_h // 5)
-        if feather < 2:
-            return patch
-
-        result = patch.astype(np.float32)
-        for x in range(tile_w, target_w, tile_w):
-            x0 = max(0, x - feather)
-            x1 = min(target_w, x + feather)
-            k  = ((x1 - x0) | 1)
-            zone    = np.clip(result[:, x0:x1], 0, 255).astype(np.uint8)
-            blurred = cv2.GaussianBlur(zone, (k, 1), k / 3.0)
-            result[:, x0:x1] = blurred.astype(np.float32)
-        for y in range(tile_h, target_h, tile_h):
-            y0 = max(0, y - feather)
-            y1 = min(target_h, y + feather)
-            k  = ((y1 - y0) | 1)
-            zone    = np.clip(result[y0:y1, :], 0, 255).astype(np.uint8)
-            blurred = cv2.GaussianBlur(zone, (1, k), k / 3.0)
-            result[y0:y1, :] = blurred.astype(np.float32)
-        return np.clip(result, 0, 255).astype(np.uint8)
-
-    def _soften_v_seam(self, canvas, x_seam, blur_px):
-        """Blurs a narrow vertical band at x_seam to soften the border-center transition."""
-        x0 = max(0, x_seam - blur_px)
-        x1 = min(canvas.shape[1], x_seam + blur_px)
-        k  = max(3, (blur_px * 2 + 1) | 1)
-        zone    = np.clip(canvas[:, x0:x1], 0, 255).astype(np.uint8)
-        blurred = cv2.GaussianBlur(zone, (k, 1), blur_px / 2.0)
-        result  = canvas.copy()
-        result[:, x0:x1] = blurred.astype(np.float32)
-        return result
+        acc  = np.zeros((target_h, target_w, 3), dtype=np.float32)
+        wsum = np.zeros((target_h, target_w, 1), dtype=np.float32)
+        step_x, step_y = tw - ov_x, th - ov_y
+        # Start one overlap before the origin so the canvas edge is fully weighted
+        for y in range(-ov_y, target_h, step_y):
+            for x in range(-ov_x, target_w, step_x):
+                sy0, sx0 = max(0, -y), max(0, -x)
+                dy0, dx0 = max(0, y), max(0, x)
+                dy1, dx1 = min(target_h, y + th), min(target_w, x + tw)
+                if dy1 <= dy0 or dx1 <= dx0:
+                    continue
+                sy1, sx1 = sy0 + (dy1 - dy0), sx0 + (dx1 - dx0)
+                w = weight[sy0:sy1, sx0:sx1]
+                acc[dy0:dy1, dx0:dx1]  += tile[sy0:sy1, sx0:sx1] * w
+                wsum[dy0:dy1, dx0:dx1] += w
+        return acc / np.maximum(wsum, 1e-6)
 
     def _silk_sheen(self, canvas):
         """Adds a subtle cosine luminosity wave to simulate silk fabric sheen."""
@@ -183,6 +202,7 @@ class GenerateComplete:
     """
     def __init__(self):
         self.client = None
+        self.mode = None  # "vertex" | "api_key"
         self._init_client()
 
     def _init_client(self):
@@ -192,20 +212,55 @@ class GenerateComplete:
             location = os.environ.get("GOOGLE_CLOUD_LOCATION", "us-central1").strip()
             try:
                 self.client = genai.Client(vertexai=True, project=project, location=location)
+                self.mode = "vertex"
                 print(f"GenerateComplete: Initialized Vertex AI Client (project='{project}', location='{location}').")
                 return
             except Exception as ve:
                 print(f"GenerateComplete: Vertex AI init failed ({ve}), trying API key mode...")
 
-            api_key = os.environ.get("GOOGLE_CLOUD_API_KEY") or os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
-            if api_key:
-                self.client = genai.Client(api_key=api_key.strip())
-                print("GenerateComplete: Initialized Google GenAI Client (AI Studio fallback).")
-            else:
+            if not self._switch_to_api_key():
                 print("GenerateComplete: No credentials available.")
         except Exception as e:
             print(f"GenerateComplete: Failed to initialize: {e}")
             self.client = None
+
+    def _switch_to_api_key(self):
+        """Use the AI Studio API key client. Returns False if no key is configured."""
+        api_key = os.environ.get("GOOGLE_CLOUD_API_KEY") or os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+        if not api_key:
+            return False
+        from google import genai
+        self.client = genai.Client(api_key=api_key.strip())
+        self.mode = "api_key"
+        print("GenerateComplete: Initialized Google GenAI Client (AI Studio API key).")
+        return True
+
+    def _generate(self, model_name, contents):
+        """generate_content with a one-time fallback from Vertex AI to the API key.
+
+        Vertex client creation never checks IAM, so a missing
+        'aiplatform.endpoints.predict' permission only surfaces as a 403 on the
+        first call. In that case switch to the API key (if any) and retry.
+        """
+        from google.genai import types
+        call = lambda: self.client.models.generate_content(
+            model=model_name,
+            contents=contents,
+            config=types.GenerateContentConfig(response_modalities=["TEXT", "IMAGE"]),
+        )
+        try:
+            return call()
+        except Exception as e:
+            denied = "403" in str(e) or "PERMISSION_DENIED" in str(e)
+            if denied and self.mode == "vertex" and self._switch_to_api_key():
+                print("GenerateComplete: Vertex AI permission denied; retrying with API key.")
+                return call()
+            raise
+
+    @staticmethod
+    def _should_stop(err_msg):
+        """Errors that will fail identically for every candidate model."""
+        return any(k in err_msg for k in ("429", "RESOURCE_EXHAUSTED", "limit: 0", "403", "PERMISSION_DENIED"))
 
     def predict(self, border_img, pallu_img, body_img, custom_prompt="", aspect_ratio_img=None):
         """
@@ -268,13 +323,7 @@ class GenerateComplete:
         for model_name in candidate_models:
             try:
                 print(f"GenerateComplete: Attempting direct saree generation with {model_name}...")
-                response = self.client.models.generate_content(
-                    model=model_name,
-                    contents=contents,
-                    config=types.GenerateContentConfig(
-                        response_modalities=["TEXT", "IMAGE"]
-                    )
-                )
+                response = self._generate(model_name, contents)
 
                 if response and response.candidates:
                     for part in response.candidates[0].content.parts:
@@ -286,8 +335,8 @@ class GenerateComplete:
             except Exception as e:
                 err_msg = str(e)
                 print(f"GenerateComplete: {model_name} attempt note: {err_msg[:120]}")
-                # If rate limited or quota 0, no need to keep hammering the same quota bucket
-                if "429" in err_msg or "RESOURCE_EXHAUSTED" in err_msg or "limit: 0" in err_msg:
+                # Quota / permission errors fail the same way for every model: stop here
+                if self._should_stop(err_msg):
                     break
 
         return None  # end of predict
@@ -358,13 +407,7 @@ class GenerateComplete:
         for model_name in candidate_models:
             try:
                 print(f"GenerateComplete.generate_template: Attempting AI flat-lay template with {model_name}...")
-                response = self.client.models.generate_content(
-                    model=model_name,
-                    contents=contents,
-                    config=types.GenerateContentConfig(
-                        response_modalities=["TEXT", "IMAGE"]
-                    )
-                )
+                response = self._generate(model_name, contents)
 
                 if response and response.candidates:
                     for part in response.candidates[0].content.parts:
@@ -376,7 +419,7 @@ class GenerateComplete:
             except Exception as e:
                 err_msg = str(e)
                 print(f"GenerateComplete.generate_template: {model_name} note: {err_msg[:120]}")
-                if "429" in err_msg or "RESOURCE_EXHAUSTED" in err_msg or "limit: 0" in err_msg:
+                if self._should_stop(err_msg):
                     break
 
         return None  # end of generate_template

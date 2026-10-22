@@ -1,5 +1,161 @@
 [
   {
+    "id": "FS-2026-10-22-194044",
+    "name": "Fusion Batch",
+    "status": "completed",
+    "createdOn": "22 Oct 2026, 07.40 PM",
+    "palluCount": 1,
+    "borderCount": 1,
+    "bodyCount": 1,
+    "totalDesigns": 1,
+    "generatedDesigns": 1,
+    "extraCount": 0,
+    "description": "",
+    "engine": "SareeFusion Studio Engine",
+    "thumbnails": [
+      "/api/static/batches/FS-2026-10-22-194044/design_0_wearable.png"
+    ],
+    "uploadedComponents": {
+      "pallu": [
+        {
+          "label": "P1",
+          "image": "/api/static/batches/FS-2026-10-22-194044/uploads/pallu_0.png"
+        }
+      ],
+      "border": [
+        {
+          "label": "B1",
+          "image": "/api/static/batches/FS-2026-10-22-194044/uploads/border_0.png"
+        }
+      ],
+      "body": [
+        {
+          "label": "B1",
+          "image": "/api/static/batches/FS-2026-10-22-194044/uploads/body_0.png"
+        }
+      ]
+    },
+    "designs": [
+      {
+        "id": "FS-2026-10-22-194044-001",
+        "name": "Fusion Design P1-B1-B1",
+        "image": "/api/static/batches/FS-2026-10-22-194044/design_0_wearable.png",
+        "templateImage": "/api/static/batches/FS-2026-10-22-194044/design_0_template.png",
+        "tags": [
+          "P1",
+          "B1",
+          "B1"
+        ],
+        "matchPercent": "98% Match",
+        "engine": "SareeFusion Studio Engine"
+      }
+    ]
+  },
+  {
+    "id": "FS-2026-10-22-193929",
+    "name": "Fusion Batch",
+    "status": "completed",
+    "createdOn": "22 Oct 2026, 07.39 PM",
+    "palluCount": 1,
+    "borderCount": 1,
+    "bodyCount": 1,
+    "totalDesigns": 1,
+    "generatedDesigns": 1,
+    "extraCount": 0,
+    "description": "",
+    "engine": "SareeFusion Studio Engine",
+    "thumbnails": [
+      "/api/static/batches/FS-2026-10-22-193929/design_0_wearable.png"
+    ],
+    "uploadedComponents": {
+      "pallu": [
+        {
+          "label": "P1",
+          "image": "/api/static/batches/FS-2026-10-22-193929/uploads/pallu_0.png"
+        }
+      ],
+      "border": [
+        {
+          "label": "B1",
+          "image": "/api/static/batches/FS-2026-10-22-193929/uploads/border_0.png"
+        }
+      ],
+      "body": [
+        {
+          "label": "B1",
+          "image": "/api/static/batches/FS-2026-10-22-193929/uploads/body_0.png"
+        }
+      ]
+    },
+    "designs": [
+      {
+        "id": "FS-2026-10-22-193929-001",
+        "name": "Fusion Design P1-B1-B1",
+        "image": "/api/static/batches/FS-2026-10-22-193929/design_0_wearable.png",
+        "templateImage": "/api/static/batches/FS-2026-10-22-193929/design_0_template.png",
+        "tags": [
+          "P1",
+          "B1",
+          "B1"
+        ],
+        "matchPercent": "98% Match",
+        "engine": "SareeFusion Studio Engine"
+      }
+    ]
+  },
+  {
+    "id": "FS-2026-10-22-191032",
+    "name": "Fusion Batch",
+    "status": "completed",
+    "createdOn": "22 Oct 2026, 07.10 PM",
+    "palluCount": 1,
+    "borderCount": 1,
+    "bodyCount": 1,
+    "totalDesigns": 1,
+    "generatedDesigns": 1,
+    "extraCount": 0,
+    "description": "",
+    "engine": "SareeFusion Studio Engine",
+    "thumbnails": [
+      "/api/static/batches/FS-2026-10-22-191032/design_0_wearable.png"
+    ],
+    "uploadedComponents": {
+      "pallu": [
+        {
+          "label": "P1",
+          "image": "/api/static/batches/FS-2026-10-22-191032/uploads/pallu_0.png"
+        }
+      ],
+      "border": [
+        {
+          "label": "B1",
+          "image": "/api/static/batches/FS-2026-10-22-191032/uploads/border_0.png"
+        }
+      ],
+      "body": [
+        {
+          "label": "B1",
+          "image": "/api/static/batches/FS-2026-10-22-191032/uploads/body_0.png"
+        }
+      ]
+    },
+    "designs": [
+      {
+        "id": "FS-2026-10-22-191032-001",
+        "name": "Fusion Design P1-B1-B1",
+        "image": "/api/static/batches/FS-2026-10-22-191032/design_0_wearable.png",
+        "templateImage": "/api/static/batches/FS-2026-10-22-191032/design_0_template.png",
+        "tags": [
+          "P1",
+          "B1",
+          "B1"
+        ],
+        "matchPercent": "98% Match",
+        "engine": "SareeFusion Studio Engine"
+      }
+    ]
+  },
+  {
     "id": "FS-2026-10-17-201459",
     "name": "Fusion Batch",
     "status": "completed",

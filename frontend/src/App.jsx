@@ -9,6 +9,7 @@ import Sarees from './pages/Sarees';
 import Design from './pages/Design';
 import WeaverDashboard from './pages/WeaverDashboard';
 import Simulation from './pages/Simulation';
+import ResultPage from './pages/ResultPage';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -38,6 +39,7 @@ function App() {
               <Route path="/design" element={<ProtectedRoute><Design /></ProtectedRoute>} />
               <Route path="/weaver" element={<ProtectedRoute><WeaverDashboard /></ProtectedRoute>} />
               <Route path="/simulation" element={<ProtectedRoute><Simulation /></ProtectedRoute>} />
+              <Route path="/result/:batchId" element={<ProtectedRoute><ResultPage /></ProtectedRoute>} />
               <Route path="/layout-creator" element={<Navigate to="/simulation" replace />} />
               <Route path="/layout" element={<Navigate to="/simulation" replace />} />
             </Routes>

@@ -1,11 +1,13 @@
 import { useState, useRef, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiUploadCloud, FiX, FiDownload, FiPrinter, FiRefreshCw, FiArrowLeft, FiLogOut } from 'react-icons/fi';
+import { FiUploadCloud, FiX, FiDownload, FiPrinter, FiRefreshCw, FiArrowLeft, FiLogOut, FiArrowRight } from 'react-icons/fi';
 import { useSareeDesign } from '../context/SareeDesignContext.jsx';
 import ColorPickerOverlay from '../components/saree/ColorPickerOverlay';
 import CadViewer from '../components/saree/CadViewer';
 import SimulationCanvas from '../components/saree/SimulationCanvas';
 import CollectionAutoSaver from '../components/saree/CollectionAutoSaver';
+import GeneratingOverlay from '../components/saree/GeneratingOverlay';
+import { generateBatch } from '../utils/generateBatch';
 
 // three.js is only downloaded when the 3D view is first opened
 const DrapeViewer3D = lazy(() => import('../components/saree/DrapeViewer3D'));
@@ -248,6 +250,8 @@ export default function Simulation() {
   const navigate = useNavigate();
   const [yarnColors, setYarnColors] = useState([]);
   const [zoom, setZoom] = useState(0.5);
+  const [generating, setGenerating] = useState(false);
+  const [genError, setGenError] = useState('');
   const canvasRef = useRef(null);
 
   const specs = computeSpecs(p);
@@ -286,6 +290,27 @@ export default function Simulation() {
     return () => { cancelled = true; };
   }, [assets, patchImg]);
   const setParam = (key) => (val) => setP(prev => ({ ...prev, [key]: val }));
+
+  // ── Next Step: compile both outputs on the backend (saved to batches.json),
+  //    then land on the Result page ──
+  async function handleNextStep() {
+    if (generating) return;
+    setGenerating(true);
+    setGenError('');
+    try {
+      const batch = await generateBatch({
+        assets,
+        style: drapeStyle,
+        description: assets.description,
+        templateCanvas: canvasRef.current,
+      });
+      navigate(`/result/${batch.id}`, { state: { batch } });
+    } catch (err) {
+      console.error(err);
+      setGenError(err.message || 'Generation failed. Please try again.');
+      setGenerating(false);
+    }
+  }
 
   // ── Export as BMP ──
   function exportBMP() {
@@ -369,6 +394,9 @@ export default function Simulation() {
       fontFamily: "'Inter', sans-serif", padding: '0 0 40px' }}>
 
       <CollectionAutoSaver canvasRef={canvasRef} config={saveConfig} hasAssets={hasAssets} />
+      {(generating || genError) && (
+        <GeneratingOverlay error={genError} onRetry={handleNextStep} onDismiss={() => setGenError('')} />
+      )}
 
       {/* Header */}
       <div style={{ background: '#1a1e35', padding: '16px 24px',
@@ -396,6 +424,10 @@ export default function Simulation() {
           <button onClick={exportPrint}
             style={btnStyle('#3a5040')}>
             <FiPrinter size={14} /> &nbsp;Print / PDF
+          </button>
+          <button onClick={handleNextStep} disabled={generating}
+            style={{ ...btnStyle('linear-gradient(135deg, #00D4FF, #0097A7)'), fontWeight: 700 }}>
+            Next Step &nbsp;<FiArrowRight size={14} />
           </button>
         </div>
       </div>

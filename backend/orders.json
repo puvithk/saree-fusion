@@ -1,1 +1,275 @@
-[]
+[
+  {
+    "id": "ORD-106953",
+    "batchId": "FS-2026-10-22-191032",
+    "design": {
+      "id": "FS-2026-10-22-191032-001",
+      "name": "Fusion Design P1-B1-B1",
+      "image": "/api/static/batches/FS-2026-10-22-191032/design_0_wearable.png",
+      "templateImage": "/api/static/batches/FS-2026-10-22-191032/design_0_template.png",
+      "tags": [
+        "P1",
+        "B1",
+        "B1"
+      ],
+      "matchPercent": "98% Match",
+      "engine": "SareeFusion Studio Engine"
+    },
+    "materialName": "Banarasi Pure Silk",
+    "price": "4,500",
+    "customerName": "Sri Devaki",
+    "quantity": 1,
+    "status": "Jacquard Card Generated",
+    "createdOn": "22 Oct 2026, 07:14 PM",
+    "jacquardCardUrl": "/api/static/orders/ORD-106953/jacquard.bmp",
+    "jacquardTxtUrl": "/api/static/orders/ORD-106953/jacquard_cards.txt",
+    "hookSize": 200,
+    "totalCards": 100,
+    "yarnColors": {
+      "pallu": {
+        "hex": "#665B4D",
+        "name": "Olive Green",
+        "role": "Pallu Silk (Weft)"
+      },
+      "border": {
+        "hex": "#75525D",
+        "name": "Copper Zari",
+        "role": "Border Zari (Weft)"
+      },
+      "body": {
+        "hex": "#3A3B54",
+        "name": "Charcoal Black",
+        "role": "Saree Body (Warp)"
+      }
+    },
+    "loomOutputs": {
+      "traditional": {
+        "name": "Traditional Jacquard Loom",
+        "format": "Card Punch Matrix (.txt/.bmp)",
+        "stats": [
+          {
+            "label": "Warp Hooks",
+            "value": "200"
+          },
+          {
+            "label": "Picks/Cards",
+            "value": "100"
+          },
+          {
+            "label": "Controller",
+            "value": "Manual Punch Cards"
+          }
+        ],
+        "bmpUrl": "/api/static/orders/ORD-106953/jacquard.bmp",
+        "punchCardPreview": [
+          {
+            "card": "Card 001",
+            "bits": "000000000000000000000000...",
+            "r": "1",
+            "g": "0",
+            "b": "0",
+            "colorName": "Olive Green",
+            "colorHex": "#874723"
+          },
+          {
+            "card": "Card 002",
+            "bits": "000000000000000000000000...",
+            "r": "1",
+            "g": "0",
+            "b": "0",
+            "colorName": "Copper Zari",
+            "colorHex": "#8b4e27"
+          },
+          {
+            "card": "Card 003",
+            "bits": "000000000000000000000000...",
+            "r": "1",
+            "g": "0",
+            "b": "0",
+            "colorName": "Olive Green",
+            "colorHex": "#864c26"
+          },
+          {
+            "card": "Card 004",
+            "bits": "000000000000000000000000...",
+            "r": "1",
+            "g": "0",
+            "b": "0",
+            "colorName": "Copper Zari",
+            "colorHex": "#8c4c26"
+          },
+          {
+            "card": "Card 005",
+            "bits": "000000000000000000000000...",
+            "r": "1",
+            "g": "0",
+            "b": "0",
+            "colorName": "Copper Zari",
+            "colorHex": "#92552a"
+          },
+          {
+            "card": "Card 006",
+            "bits": "000000000000000000000000...",
+            "r": "1",
+            "g": "0",
+            "b": "0",
+            "colorName": "Copper Zari",
+            "colorHex": "#94582c"
+          },
+          {
+            "card": "Card 007",
+            "bits": "000000000000000000000000...",
+            "r": "1",
+            "g": "0",
+            "b": "0",
+            "colorName": "Copper Zari",
+            "colorHex": "#884924"
+          },
+          {
+            "card": "Card 008",
+            "bits": "000000000000000000000000...",
+            "r": "1",
+            "g": "0",
+            "b": "0",
+            "colorName": "Copper Zari",
+            "colorHex": "#8b4d27"
+          },
+          {
+            "card": "Card 009",
+            "bits": "000000000000000000000000...",
+            "r": "1",
+            "g": "0",
+            "b": "0",
+            "colorName": "Olive Green",
+            "colorHex": "#854a25"
+          },
+          {
+            "card": "Card 010",
+            "bits": "000000000000000000000000...",
+            "r": "1",
+            "g": "0",
+            "b": "0",
+            "colorName": "Copper Zari",
+            "colorHex": "#8c4f28"
+          }
+        ],
+        "files": [
+          {
+            "label": "Download Loom BMP",
+            "url": "/api/static/orders/ORD-106953/jacquard.bmp",
+            "filename": "jacquard.bmp"
+          },
+          {
+            "label": "Download Cards TXT",
+            "url": "/api/static/orders/ORD-106953/jacquard_cards.txt",
+            "filename": "jacquard_cards.txt"
+          }
+        ]
+      },
+      "digital": {
+        "name": "Modern Digital Jacquard",
+        "format": "Staubli JC5 / WIF Data",
+        "stats": [
+          {
+            "label": "Electronic Hooks",
+            "value": "200"
+          },
+          {
+            "label": "Weft Picks",
+            "value": "100"
+          },
+          {
+            "label": "Standard format",
+            "value": "Staubli JC5 / WIF"
+          }
+        ],
+        "bmpUrl": "/api/static/orders/ORD-106953/jacquard.bmp",
+        "files": [
+          {
+            "label": "Staubli File (.jac)",
+            "url": "/api/static/orders/ORD-106953/digital_pattern.jac",
+            "filename": "digital_pattern.jac"
+          },
+          {
+            "label": "Loom Tie-Up (.wif)",
+            "url": "/api/static/orders/ORD-106953/digital_tieup.wif",
+            "filename": "digital_tieup.wif"
+          }
+        ]
+      },
+      "dobby": {
+        "name": "Harness Dobby Loom",
+        "format": "Lift & Draw Plan (.dob/.txt)",
+        "stats": [
+          {
+            "label": "Harnesses",
+            "value": "24"
+          },
+          {
+            "label": "Total Picks",
+            "value": "100"
+          },
+          {
+            "label": "Draft Rule",
+            "value": "24 Shaft Straight Draw"
+          }
+        ],
+        "bmpUrl": "/api/static/orders/ORD-106953/jacquard.bmp",
+        "punchCardPreview": [
+          {
+            "pick": "Pick 001",
+            "bits": "000000000000000000000000"
+          },
+          {
+            "pick": "Pick 002",
+            "bits": "000000000000000000000000"
+          },
+          {
+            "pick": "Pick 003",
+            "bits": "000000000000000000000000"
+          },
+          {
+            "pick": "Pick 004",
+            "bits": "000000000000000000000000"
+          },
+          {
+            "pick": "Pick 005",
+            "bits": "000000000000000000000000"
+          },
+          {
+            "pick": "Pick 006",
+            "bits": "000000000000000000000000"
+          },
+          {
+            "pick": "Pick 007",
+            "bits": "000000000000000000000000"
+          },
+          {
+            "pick": "Pick 008",
+            "bits": "000000000000000000000000"
+          },
+          {
+            "pick": "Pick 009",
+            "bits": "000000000000000000000000"
+          },
+          {
+            "pick": "Pick 010",
+            "bits": "000000000000000000000000"
+          }
+        ],
+        "files": [
+          {
+            "label": "Lift Plan (.dob)",
+            "url": "/api/static/orders/ORD-106953/dobby_lift.dob",
+            "filename": "dobby_lift.dob"
+          },
+          {
+            "label": "Draw Plan (.txt)",
+            "url": "/api/static/orders/ORD-106953/dobby_draft.txt",
+            "filename": "dobby_draft.txt"
+          }
+        ]
+      }
+    }
+  }
+]

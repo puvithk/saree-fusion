@@ -5,10 +5,12 @@ import { useEffect } from 'react';
 // 1 inch = PX_PER_IN canvas pixels, so the canvas is the real saree aspect
 // (e.g. 48" × (216" saree + 32" blouse piece) → 1488 × 288 px).
 //
-// Drawn in loom order (top → bottom: end border, pallu, body with side
-// borders, blouse piece), then rotated 90° counter-clockwise into the flat
-// layout orientation of the reference template:
-//   [end border | pallu (full width) | body with borders top & bottom | blouse piece]
+// Drawn in loom order (top → bottom: pallu, body, blouse piece, with both
+// warp borders running the full length), then rotated 90° counter-clockwise
+// into the flat layout orientation of the reference template:
+//   ═══════════════ top border (continuous) ═══════════════
+//   [ pallu (weft) | body                  | blouse piece ]
+//   ═══════════════ bottom border (continuous) ════════════
 // Junctions are feathered (alpha-masked cross-fades) so the parts read as one
 // woven textile, with no hard seams or bounding-box edges.
 const PX_PER_IN = 6;
@@ -28,44 +30,6 @@ function tintRect(ctx, x, y, w, h, hex, alpha) {
   ctx.fillRect(x, y, w, h);
   ctx.globalCompositeOperation = 'source-over';
   ctx.globalAlpha = 1;
-}
-
-// Tile an image across a region; tileW is the tile width in px
-function tileRegion(ctx, slot, x, y, w, h, tileW) {
-  ctx.save();
-  ctx.beginPath();
-  ctx.rect(x, y, w, h);
-  ctx.clip();
-  const img = slot.el;
-  if (img) {
-    const tw = Math.max(8, tileW * slot.scale);
-    const th = Math.max(8, tw * (img.height / Math.max(1, img.width)));
-    const rad = (slot.rot * Math.PI) / 180;
-    const extra = slot.rot ? Math.hypot(tw, th) : 0;
-    for (let ty = y - extra; ty < y + h + extra; ty += th) {
-      for (let tx = x - extra; tx < x + w + extra; tx += tw) {
-        ctx.save();
-        ctx.translate(tx + tw / 2, ty + th / 2);
-        ctx.rotate(rad);
-        ctx.drawImage(img, -tw / 2, -th / 2, tw, th);
-        ctx.restore();
-      }
-    }
-  } else {
-    ctx.fillStyle = slot.color;
-    ctx.fillRect(x, y, w, h);
-  }
-  tintRect(ctx, x, y, w, h, slot.color, slot.tint);
-  ctx.restore();
-}
-
-// Border run across the saree width (rotated so the motif runs along x)
-function tileBorderAcross(ctx, slot, x, y, w, h) {
-  ctx.save();
-  ctx.translate(x, y + h);
-  ctx.rotate(-Math.PI / 2);
-  tileRegion(ctx, slot, 0, 0, h, w, h);
-  ctx.restore();
 }
 
 // Paint into an offscreen layer, fade the given edges to transparent, then
@@ -95,16 +59,35 @@ function feathered(ctx, x, y, w, h, edges, paint) {
   ctx.drawImage(off, x, y);
 }
 
+// One upright row of tiles: each tile is exactly h tall (aspect kept), repeated
+// along x only — a single motif row vertically, many horizontally.
+function tileRow(ctx, slot, x, y, w, h) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x, y, w, h);
+  ctx.clip();
+  const img = slot.el;
+  if (img) {
+    // Whole-pixel tiles, each overlapping the next by 1 px: fractional tile
+    // edges anti-alias into visible hairline division lines otherwise
+    const tw = Math.max(8, Math.round(h * (img.width / Math.max(1, img.height))));
+    for (let tx = Math.round(x); tx < x + w; tx += tw) ctx.drawImage(img, tx, y, tw + 1, h);
+  } else {
+    ctx.fillStyle = slot.color;
+    ctx.fillRect(x, y, w, h);
+  }
+  tintRect(ctx, x, y, w, h, slot.color, slot.tint);
+  ctx.restore();
+}
+
 function drawTemplate(canvas, p, imgs) {
   const ctx = canvas.getContext('2d');
   const { W, H } = templateSize(p);
   const px = (inches) => Math.round(inches * PX_PER_IN);
   const lb = px(p.leftBorderIn), rb = px(p.rightBorderIn);
-  const endH = Math.min(lb, rb);              // end border across the pallu end
-  const palluH = px(p.palluLenIn);            // includes the end border
-  const sareeH = px(p.sareeLenIn);
+  const fieldW = W - lb - rb;                 // weft field between the warp borders
+  const palluH = px(p.palluLenIn);
   const blendH = Math.max(2, px(p.blendIn));  // pallu ↔ body cross-fade
-  const bodyTileW = (W - lb - rb) / Math.max(1, p.motifRepsAcross);
   const f = JOIN_FEATHER_PX;
 
   ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -117,58 +100,57 @@ function drawTemplate(canvas, p, imgs) {
   ctx.fillStyle = '#f5f0eb';
   ctx.fillRect(0, 0, W, H);
 
-  // 1. Body field: tiled, running under the borders and into the blend zone
-  tileRegion(ctx, imgs.body, 0, palluH - blendH, W, sareeH - palluH + blendH, bodyTileW);
+  // Warp rule: border warp ends never move, so both borders run unbroken from
+  // the first pick to the last (pallu → body → blouse). Pallu, body and blouse
+  // are weft changes only, woven in the field between them. No crosswise
+  // border is drawn anywhere — a warp border cannot turn 90°.
 
-  // 2. Pallu panel across the full width, placed once (no repeat), its lower
-  //    edge cross-fading into the body
-  feathered(ctx, 0, endH, W, palluH - endH + blendH, { bottom: blendH * 2 }, (o) => {
-    const y0 = endH, h = palluH - endH + blendH;
+  // 1. Body field between the borders, through the saree and the blouse piece.
+  //    Drawn in screen space (not loom space) so the swatch stays upright:
+  //    one tile spans the field height, repeated only along the length.
+  //    Loom rect (lb, palluH - blendH, fieldW, …) ↔ screen rect below.
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  tileRow(ctx, imgs.body, palluH - blendH, rb, H - palluH + blendH, fieldW);
+  ctx.restore();
+
+  // 2. Pallu: horizontal weft panel between the borders, placed once, its
+  //    lower edge cross-fading into the body
+  feathered(ctx, lb, 0, fieldW, palluH + blendH, { bottom: blendH * 2 }, (o) => {
+    const h = palluH + blendH;
     o.save();
     o.beginPath();
-    o.rect(0, y0, W, h);
+    o.rect(lb, 0, fieldW, h);
     o.clip();
     if (imgs.pallu.el) {
-      o.drawImage(imgs.pallu.el, 0, y0, W, h);
+      o.drawImage(imgs.pallu.el, lb, 0, fieldW, h);
     } else {
       o.fillStyle = imgs.pallu.color;
-      o.fillRect(0, y0, W, h);
+      o.fillRect(lb, 0, fieldW, h);
       o.globalAlpha = 0.15;
       o.fillStyle = '#000';
-      for (let y = y0; y < y0 + h; y += px(4)) o.fillRect(0, y, W, px(1.5));
+      for (let y = 0; y < h; y += px(4)) o.fillRect(lb, y, fieldW, px(1.5));
       o.globalAlpha = 1;
     }
-    tintRect(o, 0, y0, W, h, imgs.pallu.color, imgs.pallu.tint);
+    tintRect(o, lb, 0, fieldW, h, imgs.pallu.color, imgs.pallu.tint);
     o.restore();
   });
 
-  // 3. Longitudinal borders along the body only, feathered into the body and
-  //    into the pallu so they emerge from it like a woven transition
-  const borderTop = palluH - blendH;
-  const borderH = sareeH - borderTop;
-  feathered(ctx, 0, borderTop, lb, borderH, { right: f, top: blendH }, (o) =>
-    tileRegion(o, imgs.border, 0, borderTop, lb, borderH, lb));
-  feathered(ctx, W - rb, borderTop, rb, borderH, { left: f, top: blendH }, (o) =>
-    tileRegion(o, imgs.border, W - rb, borderTop, rb, borderH, rb));
+  // 3. Continuous warp borders: full length, edge to edge, never broken.
+  //    Like the body, drawn in screen space so the swatch stays upright: one
+  //    tile spans the band height, repeated only along the length.
+  //    Loom left border → bottom band, loom right border → top band; each
+  //    reaches f px into the field and fades there.
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  feathered(ctx, 0, 0, H, rb + f, { bottom: f }, (o) =>
+    tileRow(o, imgs.border, 0, 0, H, rb + f));
+  feathered(ctx, 0, W - lb - f, H, lb + f, { top: f }, (o) =>
+    tileRow(o, imgs.border, 0, W - lb - f, H, lb + f));
+  ctx.restore();
 
-  // 4. End border across the pallu end, softly joined to the pallu
-  feathered(ctx, 0, 0, W, endH + f, { bottom: f }, (o) =>
-    tileBorderAcross(o, imgs.border, 0, 0, W, endH + f));
-
-  // 5. Blouse piece after the saree: body fabric with a border edge,
-  //    separated by a cut line
-  if (H > sareeH) {
-    tileRegion(ctx, imgs.body, 0, sareeH, W, H - sareeH, bodyTileW);
-    feathered(ctx, 0, H - endH - f, W, endH + f, { top: f }, (o) =>
-      tileBorderAcross(o, imgs.border, 0, H - endH - f, W, endH + f));
-    ctx.strokeStyle = 'rgba(0,0,0,0.45)';
-    ctx.lineWidth = 1;
-    ctx.setLineDash([6, 4]);
-    ctx.beginPath();
-    ctx.moveTo(0, sareeH); ctx.lineTo(W, sareeH);
-    ctx.stroke();
-    ctx.setLineDash([]);
-  }
+  // 4. Blouse piece: same warp and body weave, so it continues seamlessly —
+  //    no cut / division line is drawn
 
   ctx.setTransform(1, 0, 0, 1, 0, 0);
 }

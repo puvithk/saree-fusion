@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { FiSearch, FiUser, FiHeart, FiShoppingCart, FiLogOut } from 'react-icons/fi';
+import { FiSearch, FiUser, FiHeart, FiShoppingCart, FiLogOut, FiGrid } from 'react-icons/fi';
 import { BiHome, BiPencil } from 'react-icons/bi';
 import { BsGrid, BsChevronRight } from 'react-icons/bs';
 import { GiClothes } from 'react-icons/gi';
@@ -11,6 +11,7 @@ const navLinks = [
   { to: '/design', label: 'Design', icon: <BiPencil /> },
   { to: '/collections', label: 'Collections', icon: <BsGrid /> },
   { to: '/sarees', label: 'Saree', icon: <GiClothes /> },
+  { to: '/simulation', label: 'Simulation', icon: <FiGrid /> },
   { to: '/weaver', label: 'Weaver Profile', icon: <FiUser /> },
 ];
 

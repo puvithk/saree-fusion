@@ -8,7 +8,6 @@ from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import cv2
 import numpy as np
-from itertools import product
 import json
 from PIL import Image
 # Load .env file before anything else
@@ -124,57 +123,79 @@ def tile_image(img, target_w, target_h):
 
 def generate_saree_template(body_path, pallu_path, border_path, out_path):
     """
-    Generates a high-resolution, full handloom weaving template (1024 x 648):
-    - Top & Bottom full-width borders (height 100px)
-    - Middle field: Body fabric on left (70%), Pallu design on right (30%)
+    Portrait-oriented weaving template (960 × 1800) matching standard saree CAD layout:
+    - Narrow border strips on LEFT and RIGHT edges (full height)
+    - PALLU panel at top (~46%), BODY tiled at bottom (~54%)
     """
-    w, h = 1024, 648
-    border_h = 100
-    mid_h = h - (2 * border_h)  # 448
-    body_w = 710
-    pallu_w = w - body_w        # 314
+    W, H = 960, 1800
+    border_w = int(W * 0.125)    # 120px per side
+    center_w = W - 2 * border_w  # 720px
+    pallu_h  = int(H * 0.46)     # 828px
+    body_h   = H - pallu_h       # 972px
 
-    body = cv2.imread(body_path)
-    pallu = cv2.imread(pallu_path)
+    body   = cv2.imread(body_path)
+    pallu  = cv2.imread(pallu_path)
     border = cv2.imread(border_path)
 
     if body is None or pallu is None or border is None:
         print("Error: Missing component images for template generation.")
         return False
 
-    # Resize border to height 100, then tile horizontally to full width 1024
+    # --- Border: rotate if landscape, scale to border_w wide, tile vertically ---
     bh, bw = border.shape[:2]
-    border_scaled = cv2.resize(border, (max(1, int(bw * (border_h / bh))), border_h))
+    if bw > bh:
+        border = cv2.rotate(border, cv2.ROTATE_90_CLOCKWISE)
+        bh, bw = border.shape[:2]
+    tile_h_b = max(20, int(border_w * (bh / max(1, bw))))
+    b_tile   = cv2.resize(border, (border_w, tile_h_b))
+    b_strip  = np.zeros((H, border_w, 3), dtype=np.uint8)
+    for y in range(0, H, tile_h_b):
+        y2 = min(y + tile_h_b, H)
+        b_strip[y:y2, :] = b_tile[:y2 - y, :]
 
-    top_border = np.zeros((border_h, w, 3), dtype=np.uint8)
-    for x in range(0, w, border_scaled.shape[1]):
-        chunk_w = min(border_scaled.shape[1], w - x)
-        top_border[:, x:x+chunk_w] = border_scaled[:, :chunk_w]
+    # --- Pallu: resize to center_w × pallu_h ---
+    pallu_r = cv2.resize(pallu, (center_w, pallu_h))
 
-    bottom_border = top_border.copy()
+    # --- Body: tile seamlessly across center_w × body_h ---
+    bdy_h, bdy_w = body.shape[:2]
+    n_cols  = max(1, round(center_w / max(1, bdy_w)))
+    tw      = max(60, center_w // n_cols)
+    th      = max(60, int(tw * (bdy_h / max(1, bdy_w))))
+    b_tile2 = cv2.resize(body, (tw, th))
+    body_patch = np.zeros((body_h, center_w, 3), dtype=np.uint8)
+    for y in range(0, body_h, th):
+        for x in range(0, center_w, tw):
+            y2 = min(y + th, body_h)
+            x2 = min(x + tw, center_w)
+            body_patch[y:y2, x:x2] = b_tile2[:y2 - y, :x2 - x]
 
-    # Scale and tile body across body_w x mid_h seamlessly
-    body_h, body_w_orig = body.shape[:2]
-    scale = mid_h / max(1, body_h * 2) if body_h < 300 else mid_h / body_h
-    tile_h = max(100, int(body_h * scale))
-    tile_w = max(100, int(body_w_orig * scale))
-    body_tile_resized = cv2.resize(body, (tile_w, tile_h))
-    body_tiled = np.zeros((mid_h, body_w, 3), dtype=np.uint8)
-    for y in range(0, mid_h, tile_h):
-        for x in range(0, body_w, tile_w):
-            cy = min(tile_h, mid_h - y)
-            cx = min(tile_w, body_w - x)
-            body_tiled[y:y+cy, x:x+cx] = body_tile_resized[:cy, :cx]
+    # --- Gradient blend at pallu→body junction (50px) ---
+    blend_h = 50
+    pallu_ext = cv2.resize(pallu, (center_w, pallu_h + blend_h))
+    for i in range(blend_h):
+        alpha = 1.0 - i / blend_h
+        if pallu_h + i < H and i < body_h:
+            pass  # handled in assembly
 
-    # Resize pallu to fill pallu_w x mid_h
-    pallu_resized = cv2.resize(pallu, (pallu_w, mid_h))
+    # --- Assemble ---
+    canvas = np.full((H, W, 3), [245, 240, 235], dtype=np.uint8)
+    canvas[:, 0:border_w]           = b_strip
+    canvas[:, W - border_w:]        = b_strip
+    canvas[0:pallu_h, border_w:W - border_w] = pallu_r
+    canvas[pallu_h:H, border_w:W - border_w] = body_patch
 
-    # Combine middle section
-    middle_section = np.hstack((body_tiled, pallu_resized))
+    # Blend pallu→body junction
+    for i in range(blend_h):
+        y = pallu_h - blend_h // 2 + i
+        if 0 <= y < H:
+            alpha = (blend_h - i) / blend_h
+            row_pallu = pallu_ext[y, :] if y < pallu_ext.shape[0] else canvas[y, border_w:W - border_w]
+            row_body  = canvas[y, border_w:W - border_w]
+            canvas[y, border_w:W - border_w] = np.clip(
+                row_pallu * alpha + row_body * (1.0 - alpha), 0, 255
+            ).astype(np.uint8)
 
-    # Assemble complete saree template
-    template = np.vstack((top_border, middle_section, bottom_border))
-    cv2.imwrite(out_path, template)
+    cv2.imwrite(out_path, canvas)
     return True
 
 def generate_template(pallu_path, border_path, body_path, out_path):
@@ -260,7 +281,7 @@ def drape_saree(model_path, body_path, border_path, out_path):
 
 # --- Google Gemini AI Multimodal & Image Generation Engine ---
 
-def generate_ai_saree(body_path, pallu_path, border_path, description, style, wearable_out_path, template_out_path):
+def generate_ai_saree(body_path, pallu_path, border_path, description, style, wearable_out_path, template_out_path, scroll_path=None):
     """
     Multimodal AI Saree Generation ported directly from puvithk/sareeFusion:
     1. Template View (Output 2): GenerateSaree.tempelete with CLAHE enhancement, seamless tiling, and seam-blur blending.
@@ -268,17 +289,33 @@ def generate_ai_saree(body_path, pallu_path, border_path, description, style, we
     3. Seamless Studio Fallback: synthesize_realistic_wearable if Vertex AI billing or quota is unavailable.
     """
     # 1. Assembling the Handloom Weaving Template (Output 2)
+    # Try AI-generated flat-lay first; fall back to programmatic tiling if unavailable.
+    templed_image = None
     try:
         border_img = Image.open(border_path).convert('RGB')
         pallu_img = Image.open(pallu_path).convert('RGB')
         body_img = Image.open(body_path).convert('RGB')
-        templed_image = generateSaree.tempelete(border_img, pallu_img, body_img)
-        templed_image.save(template_out_path, format="PNG")
-        print(f"Generated saree template saved at: {template_out_path}")
-    except Exception as e_tmpl:
-        print(f"Template generation fallback note: {e_tmpl}")
-        generate_saree_template(body_path, pallu_path, border_path, template_out_path)
-        templed_image = Image.open(template_out_path).convert('RGB')
+        scroll_img = Image.open(scroll_path).convert('RGB') if scroll_path and os.path.exists(scroll_path) else None
+        templed_image = generetorFull.generate_template(border_img, pallu_img, body_img, scroll_img=scroll_img)
+        if templed_image:
+            templed_image.save(template_out_path, format="PNG")
+            print(f"AI flat-lay template saved at: {template_out_path}")
+    except Exception as e_ai_tmpl:
+        print(f"AI template attempt note: {e_ai_tmpl}")
+        templed_image = None
+
+    if not templed_image:
+        try:
+            border_img = Image.open(border_path).convert('RGB')
+            pallu_img = Image.open(pallu_path).convert('RGB')
+            body_img = Image.open(body_path).convert('RGB')
+            templed_image = generateSaree.tempelete(border_img, pallu_img, body_img)
+            templed_image.save(template_out_path, format="PNG")
+            print(f"Programmatic template saved at: {template_out_path}")
+        except Exception as e_tmpl:
+            print(f"Template generation fallback note: {e_tmpl}")
+            generate_saree_template(body_path, pallu_path, border_path, template_out_path)
+            templed_image = Image.open(template_out_path).convert('RGB')
 
     # 2. Reference mannequin image (aspect ratio & mannequin pose reference)
     ref_path = os.path.join(ASSETS_DIR, "reference_image.png")
@@ -445,6 +482,7 @@ def generate():
     pallus = save_uploaded_files("pallu")
     borders = save_uploaded_files("border")
     bodies = save_uploaded_files("body")
+    scrolls = save_uploaded_files("scroll")
     
     # Extract style & model preferences from request
     style = request.form.get("style", "normal").lower()
@@ -495,10 +533,19 @@ def generate():
     template_out = os.path.join(batch_dir, template_name)
     wearable_out = os.path.join(batch_dir, wearable_name)
 
-    # Attempt Google Gemini Nano Banana generation (Input 1: Body, Input 2: Pallu, Input 3: Border)
+    scroll_primary = scrolls[0]["path"] if scrolls else None
+
+    # Attempt Google Gemini generation (Input 1: Body, Input 2: Pallu, Input 3: Border, Input 4: Scroll)
     ai_success, ai_msg = generate_ai_saree(
-        b_primary["path"], p_primary["path"], br_primary["path"], description, style, wearable_out, template_out
+        b_primary["path"], p_primary["path"], br_primary["path"], description, style, wearable_out, template_out,
+        scroll_path=scroll_primary
     )
+
+    # Template drawn by the Simulation studio (continuous warp borders, pallu as
+    # weft between them) takes precedence over the generated flat layout
+    sim_template = request.files.get("template")
+    if sim_template and sim_template.filename:
+        sim_template.save(template_out)
 
     if ai_success:
         gen_engine = "Google Gemini Multimodal AI"
@@ -1019,6 +1066,72 @@ def delete_order(order_id):
             print(f"Error removing order directory {order_dir}: {e}")
             
     return jsonify({"success": True, "message": f"Order {order_id} deleted successfully"})
+
+
+# ===========================================================================
+# SAVED SIMULATIONS (per-user collection of finished simulations)
+# ===========================================================================
+
+SIMULATIONS_JSON = os.path.join(BASE_DIR, "simulations.json")
+
+
+def load_simulations():
+    if not os.path.exists(SIMULATIONS_JSON):
+        return []
+    try:
+        with open(SIMULATIONS_JSON, 'r') as f:
+            return json.load(f)
+    except Exception as e:
+        print("Error reading simulations.json:", e)
+        return []
+
+
+def save_simulations(sims):
+    try:
+        with open(SIMULATIONS_JSON, 'w') as f:
+            json.dump(sims, f, indent=2)
+    except Exception as e:
+        print("Error writing simulations.json:", e)
+
+
+def _sim_owner():
+    return (request.args.get('owner') or 'guest').strip().lower()
+
+
+@app.route('/api/simulations', methods=['GET'])
+def get_simulations():
+    """Lists the owner's saved simulations, newest first."""
+    owner = _sim_owner()
+    sims = [s for s in load_simulations() if s.get("owner") == owner]
+    sims.sort(key=lambda s: s.get("savedAt", ""), reverse=True)
+    return jsonify(sims)
+
+
+@app.route('/api/simulations', methods=['POST'])
+def upsert_simulation():
+    """Inserts or replaces a simulation by id (one entry per simulation session)."""
+    # sendBeacon posts as text/plain, so parse regardless of content type
+    data = request.get_json(force=True, silent=True) or {}
+    sim_id = data.get("id")
+    if not sim_id:
+        return jsonify({"error": "id is required"}), 400
+    data["owner"] = (data.get("owner") or 'guest').strip().lower()
+    sims = [s for s in load_simulations() if s.get("id") != sim_id]
+    sims.append(data)
+    save_simulations(sims)
+    return jsonify({"success": True, "id": sim_id})
+
+
+@app.route('/api/simulations/<sim_id>', methods=['DELETE'])
+def delete_simulation(sim_id):
+    """Deletes one of the owner's saved simulations."""
+    owner = _sim_owner()
+    sims = load_simulations()
+    kept = [s for s in sims if not (s.get("id") == sim_id and s.get("owner") == owner)]
+    if len(kept) == len(sims):
+        return jsonify({"error": "Simulation not found"}), 404
+    save_simulations(kept)
+    return jsonify({"success": True})
 
 
 # ===========================================================================

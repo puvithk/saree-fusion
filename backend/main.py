@@ -1209,66 +1209,71 @@ def _user_public(user: dict) -> dict:
     return {"id": user["id"], "name": user["name"], "email": user["email"], "phone": user["phone"]}
 
 
-@app.route('/api/auth/register', methods=['POST'])
-def auth_register():
-    """Registers a new user. Disabled when AUTH_ENABLED is False."""
-    if not AUTH_ENABLED:
-        return jsonify({"error": "Authentication is disabled on this server."}), 503
-
-    data = request.get_json(force=True, silent=True) or {}
-    name = (data.get('name') or '').strip()
-    email = (data.get('email') or '').strip().lower()
-    phone = (data.get('phone') or '').strip()
-    password = data.get('password') or ''
-
-    if not name or not email or not phone or not password:
-        return jsonify({"error": "name, email, phone and password are required."}), 400
-    if len(password) < 6:
-        return jsonify({"error": "Password must be at least 6 characters."}), 400
-
-    users = _load_users()
-    if any(u['email'] == email for u in users):
-        return jsonify({"error": "An account with that email already exists."}), 409
-
-    new_user = {
-        "id": str(uuid.uuid4()),
-        "name": name,
-        "email": email,
-        "phone": phone,
-        "password_hash": _hash_password(password),
-        "created_at": datetime.utcnow().isoformat(),
-    }
-    users.append(new_user)
-    _save_users(users)
-
-    return jsonify({"user": _user_public(new_user)}), 201
-
-
-@app.route('/api/auth/login', methods=['POST'])
-def auth_login():
-    """Authenticates a user by email and password. Disabled when AUTH_ENABLED is False."""
-    if not AUTH_ENABLED:
-        return jsonify({"error": "Authentication is disabled on this server."}), 503
-
-    data = request.get_json(force=True, silent=True) or {}
-    email = (data.get('email') or '').strip().lower()
-    password = data.get('password') or ''
-
-    if not email or not password:
-        return jsonify({"error": "email and password are required."}), 400
-
-    users = _load_users()
-    user = next((u for u in users if u['email'] == email), None)
-    if not user or user['password_hash'] != _hash_password(password):
-        return jsonify({"error": "Invalid email or password."}), 401
-
-    return jsonify({"user": _user_public(user)}), 200
-
-
-@app.route('/api/auth/status', methods=['GET'])
-def auth_status():
-    """Returns whether authentication is enabled on this backend."""
-    return jsonify({"auth_enabled": AUTH_ENABLED}), 200
+# ---------------------------------------------------------------------------
+# Authentication routes are temporarily disabled (commented out).
+# To bring login back: uncomment the three routes below, and set
+# VITE_AUTH_ENABLED=true for the frontend build (see frontend/src/config.js).
+# ---------------------------------------------------------------------------
+# @app.route('/api/auth/register', methods=['POST'])
+# def auth_register():
+#     """Registers a new user. Disabled when AUTH_ENABLED is False."""
+#     if not AUTH_ENABLED:
+#         return jsonify({"error": "Authentication is disabled on this server."}), 503
+#
+#     data = request.get_json(force=True, silent=True) or {}
+#     name = (data.get('name') or '').strip()
+#     email = (data.get('email') or '').strip().lower()
+#     phone = (data.get('phone') or '').strip()
+#     password = data.get('password') or ''
+#
+#     if not name or not email or not phone or not password:
+#         return jsonify({"error": "name, email, phone and password are required."}), 400
+#     if len(password) < 6:
+#         return jsonify({"error": "Password must be at least 6 characters."}), 400
+#
+#     users = _load_users()
+#     if any(u['email'] == email for u in users):
+#         return jsonify({"error": "An account with that email already exists."}), 409
+#
+#     new_user = {
+#         "id": str(uuid.uuid4()),
+#         "name": name,
+#         "email": email,
+#         "phone": phone,
+#         "password_hash": _hash_password(password),
+#         "created_at": datetime.utcnow().isoformat(),
+#     }
+#     users.append(new_user)
+#     _save_users(users)
+#
+#     return jsonify({"user": _user_public(new_user)}), 201
+#
+#
+# @app.route('/api/auth/login', methods=['POST'])
+# def auth_login():
+#     """Authenticates a user by email and password. Disabled when AUTH_ENABLED is False."""
+#     if not AUTH_ENABLED:
+#         return jsonify({"error": "Authentication is disabled on this server."}), 503
+#
+#     data = request.get_json(force=True, silent=True) or {}
+#     email = (data.get('email') or '').strip().lower()
+#     password = data.get('password') or ''
+#
+#     if not email or not password:
+#         return jsonify({"error": "email and password are required."}), 400
+#
+#     users = _load_users()
+#     user = next((u for u in users if u['email'] == email), None)
+#     if not user or user['password_hash'] != _hash_password(password):
+#         return jsonify({"error": "Invalid email or password."}), 401
+#
+#     return jsonify({"user": _user_public(user)}), 200
+#
+#
+# @app.route('/api/auth/status', methods=['GET'])
+# def auth_status():
+#     """Returns whether authentication is enabled on this backend."""
+#     return jsonify({"auth_enabled": AUTH_ENABLED}), 200
 
 
 if __name__ == '__main__':

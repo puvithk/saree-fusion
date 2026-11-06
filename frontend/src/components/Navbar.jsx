@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useLocation } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { FiSearch, FiUser, FiHeart, FiShoppingCart, FiLogOut, FiGrid } from 'react-icons/fi';
+import { FiSearch, FiUser, FiHeart, FiShoppingCart, FiGrid } from 'react-icons/fi';
 import { BiHome, BiPencil } from 'react-icons/bi';
 import { BsGrid, BsChevronRight } from 'react-icons/bs';
 import { GiClothes } from 'react-icons/gi';
-import { useAuth } from '../context/AuthContext.jsx';
 import logoImage from '../assets/logo-image.png';
 import ThemeToggle from './ui/ThemeToggle';
 import BottomNav from './ui/BottomNav';
@@ -22,8 +21,6 @@ const navLinks = [
 
 export default function Navbar() {
   const location = useLocation();
-  const navigate = useNavigate();
-  const { user, logout, authEnabled } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
 
   // Close the drawer whenever the route changes
@@ -47,12 +44,6 @@ export default function Navbar() {
     return () => mq.removeEventListener('change', onChange);
   }, []);
 
-  const handleLogout = () => {
-    setMenuOpen(false);
-    logout();
-    navigate('/login');
-  };
-
   const getBreadcrumbs = () => {
     const path = location.pathname;
     const crumbs = [];
@@ -71,21 +62,7 @@ export default function Navbar() {
   const breadcrumbs = getBreadcrumbs();
   const isActive = (to) => (to === '/' ? location.pathname === '/' : location.pathname.startsWith(to));
 
-  const account = authEnabled && user ? (
-    <div className="navbar-user">
-      <div className="navbar-avatar" title={user.name}>
-        {user.name ? user.name.charAt(0).toUpperCase() : <FiUser />}
-      </div>
-      <span className="navbar-username">{user.name}</span>
-      <button className="action-btn logout-btn" onClick={handleLogout} aria-label="Sign out" title="Sign out">
-        <FiLogOut />
-      </button>
-    </div>
-  ) : authEnabled ? (
-    <Link to="/login" className="navbar-signin-link"><FiUser /> Sign in</Link>
-  ) : (
-    <button className="action-btn" aria-label="Account"><FiUser /></button>
-  );
+  const account = <button className="action-btn" aria-label="Account"><FiUser /></button>;
 
   return (
     <header className="navbar">

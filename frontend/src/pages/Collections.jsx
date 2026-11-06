@@ -5,7 +5,6 @@ import { FiSearch, FiX, FiPlus, FiTrash2, FiCheckCircle, FiCpu, FiEdit3 } from '
 import TiltCard from '../components/motion/TiltCard';
 import QuickActionSheet from '../components/collections/QuickActionSheet';
 import sareesilhouette from '../assets/saree-silhouette.png';
-import { useAuth } from '../context/AuthContext.jsx';
 import { deleteSavedSimulation } from '../utils/savedSimulations';
 import { STATUS, useCollectionItems } from '../utils/collectionItems';
 
@@ -99,7 +98,6 @@ function SkeletonGrid() {
 }
 
 export default function Collections() {
-  const { user } = useAuth();
   const { items, loading, error, reload } = useCollectionItems();
   const [params, setParams] = useSearchParams();
   const [deleted, setDeleted] = useState(() => new Set());
@@ -137,7 +135,7 @@ export default function Collections() {
 
   const removeSim = (item) => {
     setDeleted((d) => new Set(d).add(item.id));
-    deleteSavedSimulation(user, item.id).catch((err) => {
+    deleteSavedSimulation(item.id).catch((err) => {
       console.error('Error deleting simulation:', err);
       setDeleted((d) => { const n = new Set(d); n.delete(item.id); return n; });
     });

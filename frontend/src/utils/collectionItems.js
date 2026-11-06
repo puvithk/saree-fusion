@@ -2,7 +2,6 @@
 // "collection items" so the gallery and the detail page share a single shape.
 import { useEffect, useState, useCallback } from 'react';
 import { API_BASE_URL } from '../config';
-import { useAuth } from '../context/AuthContext.jsx';
 import { loadSavedSimulations } from './savedSimulations';
 
 export const STATUS = {
@@ -84,7 +83,6 @@ function fromSimulation(sim) {
 }
 
 export function useCollectionItems() {
-  const { user } = useAuth();
   const [state, setState] = useState({ items: [], loading: true, error: null });
 
   const load = useCallback(() => {
@@ -92,7 +90,7 @@ export function useCollectionItems() {
     const json = (url) => fetch(url).then((r) => (r.ok ? r.json() : Promise.reject(new Error(`${r.status}`))));
     Promise.allSettled([
       json(`${API_BASE_URL}/api/batches`),
-      loadSavedSimulations(user),
+      loadSavedSimulations(),
       json(`${API_BASE_URL}/api/orders`),
     ]).then(([batches, sims, orders]) => {
       if (stale) return;
@@ -111,7 +109,7 @@ export function useCollectionItems() {
       });
     });
     return () => { stale = true; };
-  }, [user]);
+  }, []);
 
   useEffect(() => load(), [load]);
   return { ...state, reload: load };

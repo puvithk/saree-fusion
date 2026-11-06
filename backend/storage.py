@@ -4,7 +4,7 @@ Vercel functions only have an ephemeral, per-instance /tmp, so JSON files and
 generated images written there disappear. When DATABASE_URL (or POSTGRES_URL)
 is set, this module keeps both in Postgres:
 
-  * kv      (name, data jsonb)         - users, orders, batches, simulations
+  * kv      (name, data jsonb)         - orders, batches, simulations
   * files   (key, mime, content bytea) - generated images and loom files
 
 When no database URL is configured, enabled() is False and main.py keeps using

@@ -30,7 +30,7 @@ generetorFull = GenerateComplete()
 # Set AUTH_ENABLED=false in your environment / .env file to disable all auth.
 # When disabled, /api/auth/* routes return 503 and the frontend skips auth.
 # ---------------------------------------------------------------------------
-AUTH_ENABLED = os.environ.get('AUTH_ENABLED', 'true').lower() not in ('false', '0', 'no')
+# AUTH_ENABLED = os.environ.get('AUTH_ENABLED', 'true').lower() not in ('false', '0', 'no')
 
 app = Flask(__name__)
 # Enable CORS for all routes to handle requests from the React frontend port

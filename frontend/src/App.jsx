@@ -12,8 +12,6 @@ import Design from './pages/Design';
 import WeaverDashboard from './pages/WeaverDashboard';
 import Simulation from './pages/Simulation';
 import ResultPage from './pages/ResultPage';
-import Login from './pages/Login';
-import Signup from './pages/Signup';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './context/AuthContext.jsx';
 import { SareeDesignProvider } from './context/SareeDesignContext.jsx';
@@ -28,9 +26,10 @@ function App() {
           <Navbar />
           <main className="main-content">
             <AnimatedRoutes>
-              {/* Public auth routes */}
-              <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<Signup />} />
+              {/* Login/Signup pages are removed for now; old links go to the home page.
+                  To restore: re-import pages/Login and pages/Signup and add their routes back. */}
+              <Route path="/login" element={<Navigate to="/" replace />} />
+              <Route path="/signup" element={<Navigate to="/" replace />} />
 
               {/* Protected routes */}
               <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />

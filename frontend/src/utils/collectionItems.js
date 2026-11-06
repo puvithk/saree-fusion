@@ -29,6 +29,8 @@ function fromBatch(batch, ordersByDesign) {
   const base = {
     kind: 'design',
     batchId: batch.id,
+    folderId: batch.id,
+    folderName: batch.name,
     created: parseCreated(batch.createdOn),
     createdLabel: batch.createdOn,
     engine: batch.engine,
@@ -38,7 +40,7 @@ function fromBatch(batch, ordersByDesign) {
   if (!designs.length) {
     const cover = abs(batch.thumbnails?.[0]);
     return [{ ...base, id: batch.id, name: batch.name, drape: cover, template: null,
-      status: STATUS.draft, tags: [], swatches: {}, order: null }];
+      layout: null, status: STATUS.draft, tags: [], swatches: {}, order: null }];
   }
   return designs.map((d) => {
     const [p, br, b] = d.tags || [];
@@ -49,6 +51,7 @@ function fromBatch(batch, ordersByDesign) {
       name: d.name,
       drape: abs(d.image),
       template: abs(d.templateImage),
+      layout: abs(d.templateImage), // flat handloom layout
       tags: d.tags || [],
       match: d.matchPercent,
       swatches: {
@@ -69,6 +72,10 @@ function fromSimulation(sim) {
     name: sim.name || 'Untitled simulation',
     drape: sim.thumbnail,
     template: null,
+    layout: sim.thumbnail, // a simulation's thumbnail is its flat layout
+    folderId: 'simulations',
+    folderName: 'Studio simulations',
+    raw: sim,
     created: Date.parse(sim.savedAt) || 0,
     createdLabel: new Date(sim.savedAt).toLocaleString(),
     status: STATUS.draft,
@@ -124,4 +131,17 @@ export function useMediaQuery(query) {
     return () => mq.removeEventListener('change', on);
   }, [query]);
   return match;
+}
+
+// Group items into folders: one per generated batch, plus one for studio simulations.
+export function groupFolders(items) {
+  const map = new Map();
+  items.forEach((it) => {
+    const key = it.folderId || it.id;
+    if (!map.has(key)) map.set(key, { id: key, name: it.folderName || it.name, kind: it.kind, items: [], created: it.created });
+    const f = map.get(key);
+    f.items.push(it);
+    f.created = Math.max(f.created, it.created);
+  });
+  return [...map.values()].sort((a, b) => b.created - a.created);
 }

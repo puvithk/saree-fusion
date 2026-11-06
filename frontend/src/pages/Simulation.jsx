@@ -264,14 +264,17 @@ function usePinchZoom(ref, zoom, setZoom) {
 
 // ─── Simulation page ──────────────────────────────────────────────────────────
 export default function Simulation() {
-  const [p, setP] = useState({ ...DEF });
+  const { assets } = useSareeDesign();
+  // Set when a saved layout is re-opened from the collection: restores its loom
+  // parameters and colourway, and keeps saving into the same collection entry.
+  const restore = assets.restore || null;
+  const [p, setP] = useState({ ...DEF, ...(restore?.params || {}) });
   const [imgs, setImgs] = useState({
-    border: { url: null, el: null, color: '#c47b1a', tint: 0.4,  scale: 1, rot: 0 },
-    body:   { url: null, el: null, color: '#e01050', tint: 0.4,  scale: 1, rot: 0 },
-    pallu:  { url: null, el: null, color: '#4a2080', tint: 0.35, scale: 1, rot: 0 },
+    border: { url: null, el: null, color: '#c47b1a', tint: 0.4,  scale: 1, rot: 0, ...(restore?.palette?.border || {}) },
+    body:   { url: null, el: null, color: '#e01050', tint: 0.4,  scale: 1, rot: 0, ...(restore?.palette?.body || {}) },
+    pallu:  { url: null, el: null, color: '#4a2080', tint: 0.35, scale: 1, rot: 0, ...(restore?.palette?.pallu || {}) },
   });
   const [view, setView] = useState('layout');
-  const { assets } = useSareeDesign();
   const [drapeStyle, setDrapeStyle] = useState(assets.style || 'normal');
   const navigate = useNavigate();
   const [yarnColors, setYarnColors] = useState([]);
@@ -279,6 +282,28 @@ export default function Simulation() {
   const [generating, setGenerating] = useState(false);
   const [genError, setGenError] = useState('');
   const canvasRef = useRef(null);
+  const imgsRef = useRef(imgs);
+  useEffect(() => { imgsRef.current = imgs; }, [imgs]);
+
+  // Small JPEG copies of the three swatches, saved with the collection entry so the
+  // layout can be re-opened and edited later (object URLs do not survive a reload)
+  const getImages = useCallback(() => {
+    const out = {};
+    ['body', 'border', 'pallu'].forEach((key) => {
+      const el = imgsRef.current[key]?.el;
+      if (!el || !el.width) return;
+      const k = Math.min(1, 640 / Math.max(el.width, el.height));
+      const c = document.createElement('canvas');
+      c.width = Math.max(1, Math.round(el.width * k));
+      c.height = Math.max(1, Math.round(el.height * k));
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, c.width, c.height);
+      ctx.drawImage(el, 0, 0, c.width, c.height);
+      out[key] = c.toDataURL('image/jpeg', 0.8);
+    });
+    return out;
+  }, []);
   const viewportRef = useRef(null);
   usePinchZoom(viewportRef, zoom, setZoom);
 
@@ -435,7 +460,8 @@ export default function Simulation() {
   return (
     <div className="mx-auto w-full max-w-[1600px] px-4 pb-10 pt-4 sm:px-6 xl:px-8">
 
-      <CollectionAutoSaver canvasRef={canvasRef} config={saveConfig} hasAssets={hasAssets} />
+      <CollectionAutoSaver canvasRef={canvasRef} config={saveConfig} hasAssets={hasAssets}
+        getImages={getImages} sessionId={restore?.id} />
       {(generating || genError) && (
         <GeneratingOverlay error={genError} onRetry={handleNextStep} onDismiss={() => setGenError('')} />
       )}

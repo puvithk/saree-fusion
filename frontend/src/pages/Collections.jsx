@@ -1,12 +1,12 @@
 import { useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { AnimatePresence, motion } from 'framer-motion';
-import { FiSearch, FiX, FiPlus, FiTrash2, FiCheckCircle, FiCpu, FiEdit3 } from 'react-icons/fi';
+import { motion } from 'framer-motion';
+import { FiSearch, FiX, FiPlus, FiTrash2, FiCheckCircle, FiCpu, FiEdit3, FiFolder, FiGrid } from 'react-icons/fi';
 import TiltCard from '../components/motion/TiltCard';
 import QuickActionSheet from '../components/collections/QuickActionSheet';
 import sareesilhouette from '../assets/saree-silhouette.png';
 import { deleteSavedSimulation } from '../utils/savedSimulations';
-import { STATUS, useCollectionItems } from '../utils/collectionItems';
+import { STATUS, groupFolders, useCollectionItems } from '../utils/collectionItems';
 
 const STATUS_FILTERS = [{ key: 'all', label: 'All' }, ...Object.values(STATUS)];
 const SOURCES = [
@@ -23,6 +23,7 @@ const SORTS = [
 const STATUS_ICON = { ready: <FiCheckCircle />, compiled: <FiCpu />, draft: <FiEdit3 /> };
 
 const grid = {
+  hidden: {},
   show: { transition: { staggerChildren: 0.055, delayChildren: 0.05 } },
 };
 const cardIn = {
@@ -33,8 +34,12 @@ const cardIn = {
 
 function ItemCard({ item, onDelete, onQuick }) {
   const { swatches } = item;
+  const [showLayout, setShowLayout] = useState(false);
+  // Designs have a drape photo and a separate flat layout; simulations only have the layout
+  const canToggle = Boolean(item.layout && item.drape && item.layout !== item.drape);
+  const shown = showLayout && item.layout ? item.layout : item.drape;
   return (
-    <motion.li variants={cardIn} layout="position" className="cg-cell">
+    <motion.li variants={cardIn} className="cg-cell">
       <TiltCard className="cg-card">
         <Link to={`/collections/${encodeURIComponent(item.id)}`} className="cg-link" aria-label={`Open ${item.name}`}
           onClick={(e) => {
@@ -42,8 +47,8 @@ function ItemCard({ item, onDelete, onQuick }) {
             if (window.matchMedia('(max-width: 767px)').matches) { e.preventDefault(); onQuick(item); }
           }}>
           <div className="cg-media">
-            {item.drape
-              ? <img src={item.drape} alt="" loading="lazy" />
+            {shown
+              ? <img src={shown} alt="" loading="lazy" className={showLayout ? 'is-layout' : ''} />
               : <div className="cg-media-empty">Generating…</div>}
             <span className={`status-pill status-${item.status.key}`}>
               {STATUS_ICON[item.status.key]} {item.status.label}
@@ -68,11 +73,46 @@ function ItemCard({ item, onDelete, onQuick }) {
             </div>
           </div>
         </Link>
+        {canToggle && (
+          <div className="cg-viewtoggle" role="group" aria-label="Preview">
+            <button type="button" className={!showLayout ? 'is-active' : ''} aria-pressed={!showLayout}
+              onClick={() => setShowLayout(false)}>Drape</button>
+            <button type="button" className={showLayout ? 'is-active' : ''} aria-pressed={showLayout}
+              onClick={() => setShowLayout(true)}>Layout</button>
+          </div>
+        )}
         {onDelete && (
           <button type="button" className="cg-delete" aria-label={`Delete ${item.name}`} onClick={onDelete}>
             <FiTrash2 />
           </button>
         )}
+      </TiltCard>
+    </motion.li>
+  );
+}
+
+function FolderCard({ folder }) {
+  const covers = folder.items.map((i) => i.drape || i.layout).filter(Boolean).slice(0, 3);
+  const compiled = folder.items.filter((i) => i.status.key === 'compiled').length;
+  return (
+    <motion.li variants={cardIn} className="cg-cell">
+      <TiltCard className="cg-card cg-folder">
+        <Link to={`/collections/folder/${encodeURIComponent(folder.id)}`} className="cg-link" aria-label={`Open folder ${folder.name}`}>
+          <div className="cg-folder-stack">
+            {covers.length === 0 && <div className="cg-media-empty">Empty</div>}
+            {covers.map((src, i) => (
+              <img key={i} src={src} alt="" loading="lazy" style={{ '--i': i }} />
+            ))}
+            <span className="cg-folder-count"><FiFolder /> {folder.items.length}</span>
+          </div>
+          <div className="cg-body">
+            <h3 className="cg-title" title={folder.name}>{folder.name}</h3>
+            <p className="cg-meta">
+              {folder.kind === 'simulation' ? 'Saved layouts' : `#${folder.id}`} · {folder.items.length} {folder.items.length === 1 ? 'item' : 'items'}
+              {compiled > 0 && ` · ${compiled} loom-ready`}
+            </p>
+          </div>
+        </Link>
       </TiltCard>
     </motion.li>
   );
@@ -107,6 +147,7 @@ export default function Collections() {
   const status = params.get('status') || 'all';
   const source = params.get('source') || 'all';
   const sort = params.get('sort') || 'newest';
+  const view = params.get('view') === 'folders' ? 'folders' : 'items';
 
   const setParam = (key, value, fallback) => setParams((p) => {
     const next = new URLSearchParams(p);
@@ -129,6 +170,7 @@ export default function Collections() {
       : sort === 'oldest' ? a.created - b.created : b.created - a.created));
   }, [items, q, status, source, sort, deleted]);
 
+  const folders = useMemo(() => groupFolders(visible), [visible]);
   const live = items.filter((it) => !deleted.has(it.id));
   const countFor = (key) => (key === 'all' ? live.length : live.filter((it) => it.status.key === key).length);
   const filtersActive = q || status !== 'all' || source !== 'all';
@@ -184,6 +226,12 @@ export default function Collections() {
         </section>
 
         <div className="cg-sticky">
+          <div className="cg-viewmode" role="group" aria-label="View mode">
+            <button type="button" className={view === 'items' ? 'is-active' : ''} aria-pressed={view === 'items'}
+              onClick={() => setParam('view', 'items', 'items')}><FiGrid /> All sarees</button>
+            <button type="button" className={view === 'folders' ? 'is-active' : ''} aria-pressed={view === 'folders'}
+              onClick={() => setParam('view', 'folders', 'items')}><FiFolder /> Folders</button>
+          </div>
           <div className="cg-chips" role="tablist" aria-label="Status">
             {STATUS_FILTERS.map((f) => (
               <button key={f.key} type="button" role="tab" aria-selected={status === f.key}
@@ -210,14 +258,13 @@ export default function Collections() {
           </div>
         ) : (
           <motion.ul className="cg-grid" variants={grid} initial="hidden" animate="show"
-            key={`${status}|${source}|${sort}`}>
-            <AnimatePresence>
-              {visible.map((item) => (
+            key={`${view}|${status}|${source}|${sort}`}>
+              {view === 'folders' && folders.map((f) => <FolderCard key={f.id} folder={f} />)}
+              {view === 'items' && visible.map((item) => (
                 <ItemCard key={item.id} item={item}
                   onQuick={setSheetItem}
                   onDelete={item.kind === 'simulation' ? () => removeSim(item) : undefined} />
               ))}
-            </AnimatePresence>
           </motion.ul>
         )}
       </div>

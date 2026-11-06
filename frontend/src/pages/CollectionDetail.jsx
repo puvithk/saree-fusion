@@ -120,9 +120,24 @@ export default function CollectionDetail() {
   };
 
   const reopenInStudio = () => {
-    const { body, border, pallu } = item.swatches;
-    if (body?.image || border?.image || pallu?.image) {
-      setAssets({ bodyImage: body?.image || null, borderImage: border?.image || null, palluImage: pallu?.image || null });
+    const raw = item.kind === 'simulation' ? item.raw : null;
+    if (raw) {
+      // A saved layout: bring back its swatches, loom parameters and colourway
+      setAssets({
+        bodyImage: raw.images?.body || null,
+        borderImage: raw.images?.border || null,
+        palluImage: raw.images?.pallu || null,
+        assetNames: raw.assetNames || {},
+        style: raw.drapeStyle || 'normal',
+        description: raw.description || '',
+        restore: { id: raw.id, params: raw.params, palette: raw.palette },
+      });
+    } else {
+      const { body, border, pallu } = item.swatches;
+      setAssets({
+        bodyImage: body?.image || null, borderImage: border?.image || null, palluImage: pallu?.image || null,
+        restore: null,
+      });
     }
     navigate('/simulation');
   };

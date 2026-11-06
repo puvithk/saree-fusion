@@ -4,6 +4,7 @@ import Footer from './components/Footer';
 import Home from './pages/Home';
 import Collections from './pages/Collections';
 import CollectionDetail from './pages/CollectionDetail';
+import CollectionFolder from './pages/CollectionFolder';
 import AnimatedRoutes from './components/motion/AnimatedRoutes';
 import FusionResult from './pages/FusionResult';
 import DesignDetails from './pages/DesignDetails';
@@ -29,6 +30,7 @@ function App() {
 
               <Route path="/" element={<Home />} />
               <Route path="/collections" element={<Collections />} />
+              <Route path="/collections/folder/:folderId" element={<CollectionFolder />} />
               <Route path="/collections/:itemId" element={<CollectionDetail />} />
               <Route path="/collections/batch/:batchId" element={<FusionResult />} />
               <Route path="/collections/batch/:batchId/design/:designId" element={<DesignDetails />} />

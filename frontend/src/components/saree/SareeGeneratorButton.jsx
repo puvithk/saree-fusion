@@ -25,6 +25,7 @@ export default function SareeGeneratorButton({ uploads, style, description, canG
       },
       style,
       description,
+      restore: null,
     });
     navigate('/simulation');
   };

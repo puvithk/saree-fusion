@@ -18,8 +18,8 @@ function makeThumbnail(canvas) {
 // Saved Collections in the backend database when the simulation unmounts (Back / Exit / route
 // change) or the tab is closed — no manual save prompt.
 // Saves only if the session has real content: handed-over assets or edits.
-export default function CollectionAutoSaver({ canvasRef, config, hasAssets }) {
-  const sessionId = useRef(`SIM-${Date.now().toString(36)}`);
+export default function CollectionAutoSaver({ canvasRef, config, hasAssets, getImages, sessionId: restoredId }) {
+  const sessionId = useRef(restoredId || `SIM-${Date.now().toString(36)}`);
   const latest = useRef({ config, hasAssets });
   const initialJSON = useRef(JSON.stringify(config));
 
@@ -41,6 +41,7 @@ export default function CollectionAutoSaver({ canvasRef, config, hasAssets }) {
         id: sessionId.current,
         savedAt: new Date().toISOString(),
         thumbnail: makeThumbnail(canvas),
+        images: getImages?.() || {},
         ...cfg,
       });
     };
@@ -50,7 +51,7 @@ export default function CollectionAutoSaver({ canvasRef, config, hasAssets }) {
       window.removeEventListener('pagehide', save);
       save();
     };
-  }, [canvasRef]);
+  }, [canvasRef, getImages]);
 
   return null;
 }

@@ -88,17 +88,23 @@ class GenerateSaree:
                                  dtype=np.float32)
         border_track = self._tile_overlap(border_tile, L, border_h, ov_x=F, ov_y=0)
 
-        # --- Body tile: one tile spans the visible field height ---
+        # --- Body field: single motif → butti layout, continuous pattern → tiling ---
         visible_h = H - 2 * border_h
-        n_rows = 1  # one motif row across the width; repeats only along the length
-        tile_h = max(2 * F + 20, visible_h // n_rows + F)
-        tile_w = max(2 * F + 20, int(round(tile_h * body.width / max(1, body.height))))
-        body_tile = np.asarray(body.resize((tile_w, tile_h), Image.Resampling.LANCZOS),
-                               dtype=np.float32)
         # Raw mode runs the body the full length so any space beside a fitted
         # pallu shows body fabric, not an empty box
         body_w = L - pallu_w + blend if refine else L
-        body_field = self._tile_overlap(body_tile, body_w, field_h, ov_x=F, ov_y=F)
+        motif = self._detect_single_motif(body)
+        if motif is not None:
+            print("GenerateSaree: body swatch is a single motif; laying out as butti.")
+            body_field = self._butti_field(motif, body_w, field_h, visible_h)
+        else:
+            # Continuous pattern: one tile spans the visible field height and
+            # repeats only along the length
+            tile_h = max(2 * F + 20, visible_h + F)
+            tile_w = max(2 * F + 20, int(round(tile_h * body.width / max(1, body.height))))
+            body_tile = np.asarray(body.resize((tile_w, tile_h), Image.Resampling.LANCZOS),
+                                   dtype=np.float32)
+            body_field = self._tile_overlap(body_tile, body_w, field_h, ov_x=F, ov_y=F)
 
         # --- Assemble (float) ---
         canvas = np.zeros((H, L, 3), dtype=np.float32)
@@ -139,6 +145,118 @@ class GenerateSaree:
         if refine:
             canvas = self._silk_sheen(canvas)
         return Image.fromarray(np.clip(canvas, 0, 255).astype(np.uint8))
+
+    # ── Single motif vs continuous pattern ────────────────────────────────────
+    # Thresholds are in CIELAB units (OpenCV 8-bit Lab, L scaled to 0..255).
+    MOTIF_RING_FRAC = 0.06      # outer ring sampled as "background"
+    MOTIF_MAX_RING_SPREAD = 22  # ring must be near-uniform (solid / plain weave)
+    MOTIF_MAX_EDGE_FG = 0.06    # design may barely touch the swatch edges
+    MOTIF_COVERAGE = (0.02, 0.65)
+    MOTIF_MIN_DOMINANCE = 0.35  # largest shape's share of all design pixels
+
+    def _detect_single_motif(self, img):
+        """
+        Returns None for a continuous / all-over pattern. For a single isolated
+        motif on a uniform ground, returns a dict with:
+          rgba  - motif cropped to its bounds with a soft (anti-aliased) alpha
+          bg    - background colour (RGB float, 3)
+          grain - background texture strength (RGB std of the ground)
+        """
+        rgb = np.asarray(img.convert("RGB"))
+        h, w = rgb.shape[:2]
+        lab = cv2.cvtColor(rgb, cv2.COLOR_RGB2LAB).astype(np.float32)
+
+        m = max(2, int(round(min(h, w) * self.MOTIF_RING_FRAC)))
+        ring = np.ones((h, w), dtype=bool)
+        ring[m:h - m, m:w - m] = False
+
+        # Background as a smooth quadratic surface fitted to the edge ring, so
+        # photo lighting gradients / vignetting don't count as "design"
+        yy, xx = np.mgrid[0:h, 0:w].astype(np.float32)
+        xx, yy = xx / max(1, w - 1) - 0.5, yy / max(1, h - 1) - 0.5
+        basis = np.stack([np.ones_like(xx), xx, yy, xx * xx, yy * yy, xx * yy], axis=-1)
+        coef, *_ = np.linalg.lstsq(basis[ring], lab[ring], rcond=None)
+        bg_map = basis @ coef
+        ring_dist = np.linalg.norm(lab[ring] - bg_map[ring], axis=1)
+        spread = float(np.percentile(ring_dist, 90))
+        if spread > self.MOTIF_MAX_RING_SPREAD:
+            return None  # edges are not a plain ground: continuous pattern
+
+        dist = np.linalg.norm(lab - bg_map, axis=2)
+        thresh = max(18.0, spread * 1.5 + 6.0)
+        fg = (dist > thresh).astype(np.uint8)
+        k = max(3, (min(h, w) // 100) | 1)
+        fg = cv2.morphologyEx(fg, cv2.MORPH_OPEN, np.ones((k, k), np.uint8))
+        fg = cv2.morphologyEx(fg, cv2.MORPH_CLOSE, np.ones((k * 2 + 1, k * 2 + 1), np.uint8))
+
+        coverage = fg.mean()
+        edge_fg = fg[ring].mean()
+        lo, hi = self.MOTIF_COVERAGE
+        if not (lo < coverage < hi) or edge_fg > self.MOTIF_MAX_EDGE_FG:
+            return None
+
+        # Drop specks: keep components at least 2% of the largest
+        n, labels, stats, _ = cv2.connectedComponentsWithStats(fg, 8)
+        if n <= 1:
+            return None
+        areas = stats[1:, cv2.CC_STAT_AREA]
+        # One dominant shape = single motif. Many similar shapes (dot grids,
+        # small all-over buttis) = already a continuous pattern.
+        if areas.max() / areas.sum() < self.MOTIF_MIN_DOMINANCE:
+            return None
+        keep =np.isin(labels, 1 + np.flatnonzero(areas >= areas.max() * 0.02))
+
+        ys, xs = np.nonzero(keep)
+        pad = max(2, k)
+        y0, y1 = max(0, ys.min() - pad), min(h, ys.max() + pad + 1)
+        x0, x1 = max(0, xs.min() - pad), min(w, xs.max() + pad + 1)
+        # Soft alpha: the cut-out edge fades over ~2 px, so no outline remains
+        alpha = cv2.GaussianBlur(keep.astype(np.float32), (0, 0), max(1.0, k / 3.0))
+        rgba = np.dstack([rgb, np.clip(alpha * 255, 0, 255)]).astype(np.uint8)[y0:y1, x0:x1]
+
+        ground = rgb[ring & ~keep].astype(np.float32)
+        return {
+            "rgba": Image.fromarray(rgba, "RGBA"),
+            "bg": np.median(ground, axis=0),
+            "grain": float(np.clip(ground.std(axis=0).mean(), 0, 10)),
+        }
+
+    def _butti_field(self, motif, field_w, field_h, visible_h, rows=2):
+        """
+        Balanced staggered butti: `rows` rows of motifs across the visible field,
+        alternate rows offset by half a pitch. The ground is generated from the
+        swatch's own background colour + fine weave grain, so there is no source
+        rectangle anywhere and therefore no box lines or seams.
+        """
+        rng = np.random.default_rng(7)  # deterministic grain
+        grain = rng.normal(0, motif["grain"] * 0.6, (field_h, field_w, 1)).astype(np.float32)
+        grain = cv2.GaussianBlur(grain, (0, 0), 0.7)[..., None]
+        field = np.broadcast_to(motif["bg"], (field_h, field_w, 3)).astype(np.float32) + grain
+
+        src = motif["rgba"]
+        cell_h = visible_h / rows
+        mh = max(8, int(round(cell_h * 0.78)))
+        mw = max(8, int(round(mh * src.width / max(1, src.height))))
+        spr = np.asarray(src.resize((mw, mh), Image.Resampling.LANCZOS), dtype=np.float32)
+        rgb, a = spr[..., :3], spr[..., 3:] / 255.0
+        pitch = max(mw * 1.6, mh * 1.2)
+
+        top = (field_h - visible_h) / 2  # field may extend under the borders
+        for r in range(rows):
+            cy = top + cell_h * (r + 0.5)
+            offset = pitch / 2 if r % 2 else 0.0
+            cx = offset - pitch
+            while cx - mw / 2 < field_w:
+                x0, y0 = int(round(cx - mw / 2)), int(round(cy - mh / 2))
+                sx0, sy0 = max(0, -x0), max(0, -y0)
+                dx0, dy0 = max(0, x0), max(0, y0)
+                dx1, dy1 = min(field_w, x0 + mw), min(field_h, y0 + mh)
+                if dx1 > dx0 and dy1 > dy0:
+                    sx1, sy1 = sx0 + dx1 - dx0, sy0 + dy1 - dy0
+                    aa = a[sy0:sy1, sx0:sx1]
+                    field[dy0:dy1, dx0:dx1] = rgb[sy0:sy1, sx0:sx1] * aa + field[dy0:dy1, dx0:dx1] * (1 - aa)
+                cx += pitch
+        return field
 
     @staticmethod
     def _ramp(n):

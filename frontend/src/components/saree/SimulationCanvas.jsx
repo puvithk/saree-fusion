@@ -59,8 +59,10 @@ function feathered(ctx, x, y, w, h, edges, paint) {
   ctx.drawImage(off, x, y);
 }
 
-// One upright row of tiles: each tile is exactly h tall (aspect kept), repeated
-// along x only — a single motif row vertically, many horizontally.
+// Upright tiles: at scale 1 each tile is exactly h tall (aspect kept), so there
+// is a single motif row vertically, repeated along x. The slot's Scale slider
+// resizes tiles (scale < 1 adds rows) and Rotation turns each tile about its
+// centre.
 function tileRow(ctx, slot, x, y, w, h) {
   ctx.save();
   ctx.beginPath();
@@ -70,8 +72,21 @@ function tileRow(ctx, slot, x, y, w, h) {
   if (img) {
     // Whole-pixel tiles, each overlapping the next by 1 px: fractional tile
     // edges anti-alias into visible hairline division lines otherwise
-    const tw = Math.max(8, Math.round(h * (img.width / Math.max(1, img.height))));
-    for (let tx = Math.round(x); tx < x + w; tx += tw) ctx.drawImage(img, tx, y, tw + 1, h);
+    const th = Math.max(8, Math.round(h * (slot.scale || 1)));
+    const tw = Math.max(8, Math.round(th * (img.width / Math.max(1, img.height))));
+    const rad = ((slot.rot || 0) * Math.PI) / 180;
+    // Rotated tiles need extra coverage so the corners stay filled
+    const extra = rad ? Math.ceil(Math.hypot(tw, th)) : 0;
+    for (let ty = Math.round(y) - extra; ty < y + h + extra; ty += th) {
+      for (let tx = Math.round(x) - extra; tx < x + w + extra; tx += tw) {
+        if (!rad) { ctx.drawImage(img, tx, ty, tw + 1, th + 1); continue; }
+        ctx.save();
+        ctx.translate(tx + tw / 2, ty + th / 2);
+        ctx.rotate(rad);
+        ctx.drawImage(img, -tw / 2, -th / 2, tw + 1, th + 1);
+        ctx.restore();
+      }
+    }
   } else {
     ctx.fillStyle = slot.color;
     ctx.fillRect(x, y, w, h);
@@ -114,27 +129,36 @@ function drawTemplate(canvas, p, imgs) {
   tileRow(ctx, imgs.body, palluH - blendH, rb, H - palluH + blendH, fieldW);
   ctx.restore();
 
-  // 2. Pallu: horizontal weft panel between the borders, placed once, its
-  //    lower edge cross-fading into the body
-  feathered(ctx, lb, 0, fieldW, palluH + blendH, { bottom: blendH * 2 }, (o) => {
-    const h = palluH + blendH;
+  // 2. Pallu: panel between the borders at the left end, placed once, its
+  //    inner edge cross-fading into the body. Drawn in screen space so the
+  //    image stays upright; Scale zooms it and Rotation turns it in its panel.
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  const pw = palluH + blendH;
+  feathered(ctx, 0, rb, pw, fieldW, { right: blendH * 2 }, (o) => {
+    const slot = imgs.pallu;
     o.save();
     o.beginPath();
-    o.rect(lb, 0, fieldW, h);
+    o.rect(0, rb, pw, fieldW);
     o.clip();
-    if (imgs.pallu.el) {
-      o.drawImage(imgs.pallu.el, lb, 0, fieldW, h);
+    if (slot.el) {
+      o.translate(pw / 2, rb + fieldW / 2);
+      o.rotate(((slot.rot || 0) * Math.PI) / 180);
+      o.scale(slot.scale || 1, slot.scale || 1);
+      o.drawImage(slot.el, -pw / 2, -fieldW / 2, pw, fieldW);
+      o.setTransform(1, 0, 0, 1, 0, -rb); // back to screen space of this layer
     } else {
-      o.fillStyle = imgs.pallu.color;
-      o.fillRect(lb, 0, fieldW, h);
+      o.fillStyle = slot.color;
+      o.fillRect(0, rb, pw, fieldW);
       o.globalAlpha = 0.15;
       o.fillStyle = '#000';
-      for (let y = 0; y < h; y += px(4)) o.fillRect(lb, y, fieldW, px(1.5));
+      for (let x = 0; x < pw; x += px(4)) o.fillRect(x, rb, px(1.5), fieldW);
       o.globalAlpha = 1;
     }
-    tintRect(o, lb, 0, fieldW, h, imgs.pallu.color, imgs.pallu.tint);
+    tintRect(o, 0, rb, pw, fieldW, slot.color, slot.tint);
     o.restore();
   });
+  ctx.restore();
 
   // 3. Continuous warp borders: full length, edge to edge, never broken.
   //    Like the body, drawn in screen space so the swatch stays upright: one

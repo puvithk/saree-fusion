@@ -1,0 +1,22 @@
+/* Tailwind v4 without Preflight, so the existing hand-written CSS is not reset.
+   Utilities are deliberately imported WITHOUT a cascade layer: App.css is unlayered
+   (it has a `* { margin: 0; padding: 0 }` reset) and unlayered rules always beat
+   layered ones, which would silently disable every spacing utility. Imported after
+   App.css, these utilities win on source order instead. */
+@import "tailwindcss/theme.css";
+@import "tailwindcss/utilities.css";
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+@theme inline {
+  --color-bg: var(--sf-bg);
+  --color-surface: var(--sf-surface);
+  --color-surface-2: var(--sf-surface-2);
+  --color-glass: var(--sf-glass);
+  --color-line: var(--sf-border);
+  --color-fg: var(--sf-text);
+  --color-muted: var(--sf-muted);
+  --color-gold: var(--sf-gold);
+  --color-accent: var(--sf-accent);
+  --font-display: 'Outfit', 'Inter', sans-serif;
+}

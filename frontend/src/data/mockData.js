@@ -123,10 +123,17 @@ export const sareeCategories = [
   { name: 'Traditional sarees', image: traditionalSaree },
 ];
 
+const CATALOG = [
+  { name: 'Crimson Banarasi, peacock border', image: redSaree, color: 'Red', weave: 'Banarasi', motif: 'Peacock' },
+  { name: 'Royal silk with gold zari', image: silkSaree, color: 'Gold', weave: 'Kanjivaram', motif: 'Zari' },
+  { name: 'Soft handloom cotton', image: cottonSaree, color: 'Ivory', weave: 'Cotton', motif: 'Stripes' },
+  { name: 'Bridal zari drape', image: bridalSaree, color: 'Maroon', weave: 'Banarasi', motif: 'Floral' },
+  { name: 'Heritage temple border', image: traditionalSaree, color: 'Green', weave: 'Mysore silk', motif: 'Temple' },
+];
+
 export const latestSarees = Array.from({ length: 16 }, (_, i) => ({
-  id: `FS-12-00${i + 1}`,
-  name: 'Red saree with peacock design',
-  image: redSaree,
+  id: `FS-12-${String(i + 1).padStart(3, '0')}`,
+  ...CATALOG[i % CATALOG.length],
   tags: ['P1', 'BR2', 'B3'],
-  matchPercent: `${Math.floor(70 + Math.random() * 25)}% match`,
+  matchPercent: `${70 + ((i * 7) % 25)}% match`,
 }));

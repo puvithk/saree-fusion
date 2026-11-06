@@ -1,594 +1,336 @@
-import { useState, useEffect } from 'react';
-import { FiCpu, FiDownload, FiCheckCircle, FiClock, FiFileText, FiTrash2 } from 'react-icons/fi';
-import sareesilhouette from '../assets/saree-silhouette.png';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import {
+  AlertCircle, CheckCircle2, ChevronDown, Clock, Cpu, Download, Factory, FileText, Layers, Loader2, Trash2,
+} from 'lucide-react';
+import ShuttleLoader from '../components/motion/ShuttleLoader';
 import { API_BASE_URL } from '../config';
+import { haptic } from '../utils/haptics';
+
+const abs = (u) => (u && u.startsWith('/api/') ? `${API_BASE_URL}${u}` : u);
+
+const STATE = {
+  ready: { label: 'Ready', cls: 'bg-sky-500/15 text-sky-500', icon: Clock },
+  production: { label: 'In Production', cls: 'bg-amber-500/15 text-amber-500', icon: Factory },
+  compiled: { label: 'Compiled', cls: 'bg-emerald-500/15 text-emerald-500', icon: CheckCircle2 },
+};
+const LOOM_TABS = { traditional: 'Traditional', digital: 'Digital', dobby: 'Dobby' };
+
+const panel = 'rounded-3xl border border-line bg-glass backdrop-blur-md';
+
+function StatusBadge({ state }) {
+  const { label, cls, icon: Icon } = STATE[state];
+  return (
+    <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${cls}`}>
+      <Icon size={14} /> {label}
+    </span>
+  );
+}
+
+const ext = (name = '') => (name.includes('.') ? name.split('.').pop().toLowerCase() : 'file');
+
+function FileButton({ file }) {
+  return (
+    <a href={file.href} target="_blank" rel="noopener noreferrer" download={file.filename}
+      className="sf-tap flex min-h-14 items-center gap-3 rounded-2xl border border-line bg-surface-2/60 px-3 text-fg">
+      <span className="grid h-10 w-12 shrink-0 place-items-center rounded-xl bg-gold/15 text-xs font-bold uppercase text-gold">.{ext(file.filename)}</span>
+      <span className="min-w-0 flex-1 truncate text-sm font-semibold">{file.label}</span>
+      <Download size={18} className="shrink-0 text-muted" />
+    </a>
+  );
+}
+
+/* One-tap loom file hub for a single order */
+function LoomHub({ order, state, onCompile }) {
+  const [kind, setKind] = useState('traditional');
+
+  if (state === 'production') {
+    return <ShuttleLoader label="Compiling loom cards…" />;
+  }
+
+  if (state !== 'compiled') {
+    return (
+      <div className="grid place-items-center gap-3 rounded-2xl border border-dashed border-line p-6 text-center">
+        <Cpu size={36} className="text-muted" />
+        <p className="max-w-sm text-sm text-muted">
+          Compile the flat layout into Jacquard and dobby lift files for the loom.
+        </p>
+        <button type="button" onClick={onCompile}
+          className="sf-tap inline-flex min-h-12 items-center gap-2 rounded-xl bg-gradient-to-br from-[#f2d874] to-gold px-6 font-semibold text-[#1d1700]">
+          <Cpu size={18} /> Generate loom files
+        </button>
+      </div>
+    );
+  }
+
+  const outputs = order.loomOutputs;
+  if (!outputs) {
+    // Older orders compiled before loomOutputs existed
+    const legacy = [
+      order.jacquardCardUrl && { label: 'Jacquard bitmap', href: order.jacquardCardUrl, filename: 'jacquard.bmp' },
+      order.jacquardTxtUrl && { label: 'Punch cards', href: order.jacquardTxtUrl, filename: 'jacquard_cards.txt' },
+    ].filter(Boolean);
+    return <div className="grid gap-2 sm:grid-cols-2">{legacy.map((f) => <FileButton key={f.href} file={f} />)}</div>;
+  }
+
+  const current = outputs[kind] || Object.values(outputs)[0];
+  const files = current.files.map((f) => ({ ...f, href: `${API_BASE_URL}${f.url}` }));
+  if (current.bmpUrl && !files.some((f) => f.url === current.bmpUrl)) {
+    files.push({ label: 'Loom bitmap', filename: 'jacquard.bmp', href: `${API_BASE_URL}${current.bmpUrl}` });
+  }
+
+  return (
+    <div className="space-y-4">
+      <div role="tablist" className="grid grid-cols-3 gap-1.5 rounded-2xl bg-surface-2 p-1.5">
+        {Object.keys(outputs).map((k) => (
+          <button key={k} type="button" role="tab" aria-selected={kind === k} onClick={() => { haptic(); setKind(k); }}
+            className={`sf-tap min-h-11 rounded-xl text-sm font-semibold ${kind === k ? 'bg-gold text-[#1d1700]' : 'text-muted'}`}>
+            {LOOM_TABS[k] || k}
+          </button>
+        ))}
+      </div>
+
+      <p className="text-xs text-muted">{current.name} · {current.format}</p>
+      <div className="grid grid-cols-3 gap-2">
+        {current.stats.map((s) => (
+          <div key={s.label} className="rounded-xl bg-surface-2/70 p-2.5 text-center">
+            <p className="truncate text-sm font-bold text-gold">{s.value}</p>
+            <p className="text-[11px] text-muted">{s.label}</p>
+          </div>
+        ))}
+      </div>
+
+      {current.bmpUrl && (
+        <img src={`${API_BASE_URL}${current.bmpUrl}`} alt="Loom matrix preview" loading="lazy"
+          className="max-h-60 w-full rounded-2xl border border-line bg-white object-contain [image-rendering:pixelated]" />
+      )}
+
+      <div className="grid gap-2 sm:grid-cols-2">
+        {files.map((f) => <FileButton key={f.href} file={f} />)}
+      </div>
+    </div>
+  );
+}
+
+function OrderDetail({ order, state, onCompile }) {
+  return (
+    <div className="grid gap-6 p-4 md:p-6 lg:grid-cols-2">
+      <div className="space-y-5">
+        <div className="grid grid-cols-2 gap-3">
+          {[['Drape preview', order.design.image], ['Flat layout', order.design.templateImage]].map(([label, src]) => (
+            <figure key={label}>
+              <img src={src} alt={label} loading="lazy" className="aspect-square w-full rounded-2xl border border-line object-cover" />
+              <figcaption className="mt-1.5 text-center text-xs text-muted">{label}</figcaption>
+            </figure>
+          ))}
+        </div>
+
+        <dl className="divide-y divide-line rounded-2xl border border-line bg-surface-2/40 px-4 text-sm">
+          {[
+            ['Customer', order.customerName],
+            ['Fabric', order.materialName],
+            ['Batch', `#${order.batchId}`],
+            ['Quantity', `${order.quantity} saree${order.quantity > 1 ? 's' : ''}`],
+            ['Price', `₹${order.price}`],
+          ].map(([k, v]) => (
+            <div key={k} className="flex justify-between gap-4 py-2.5">
+              <dt className="text-muted">{k}</dt>
+              <dd className="text-right font-medium text-fg">{v}</dd>
+            </div>
+          ))}
+        </dl>
+
+        {order.yarnColors && (
+          <div>
+            <h4 className="mb-2 text-xs font-bold uppercase tracking-widest text-gold">Required yarn colours</h4>
+            <div className="grid grid-cols-3 gap-2">
+              {Object.entries(order.yarnColors).map(([key, col]) => (
+                <div key={key} className="rounded-xl border border-line bg-surface-2/50 p-2.5 text-center">
+                  <span className="mx-auto mb-1.5 block h-6 w-6 rounded-full border border-line" style={{ background: col.hex }} />
+                  <p className="truncate text-xs font-semibold text-fg" title={col.name}>{col.name}</p>
+                  <p className="text-[11px] text-muted">{col.role}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div>
+        <h4 className="mb-3 flex items-center gap-2 text-sm font-bold text-fg">
+          <Layers size={18} className="text-gold" /> Loom file hub
+        </h4>
+        <LoomHub order={order} state={state} onCompile={onCompile} />
+      </div>
+    </div>
+  );
+}
 
 export default function WeaverDashboard() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [generatingId, setGeneratingId] = useState(null);
-  const [selectedLoom, setSelectedLoom] = useState({}); // orderId -> 'traditional' | 'digital' | 'dobby'
+  const [openId, setOpenId] = useState(null);
+  const [notice, setNotice] = useState('');
 
-  const fetchOrders = () => {
+  const fetchOrders = useCallback(() => {
     fetch(`${API_BASE_URL}/api/orders`)
       .then((res) => res.json())
       .then((data) => {
-        // Map images to backend URLs
-        const mappedData = data.map((o) => {
-          const design = o.design;
-          return {
-            ...o,
-            design: {
-              ...design,
-              image: design.image.startsWith('/api/') ? `${API_BASE_URL}${design.image}` : design.image,
-              templateImage: design.templateImage.startsWith('/api/') ? `${API_BASE_URL}${design.templateImage}` : design.templateImage,
-            },
-            jacquardCardUrl: o.jacquardCardUrl ? `${API_BASE_URL}${o.jacquardCardUrl}` : null,
-            jacquardTxtUrl: o.jacquardTxtUrl ? `${API_BASE_URL}${o.jacquardTxtUrl}` : null,
-          };
-        });
-        setOrders(mappedData);
-        setLoading(false);
+        setOrders(data.map((o) => ({
+          ...o,
+          design: { ...o.design, image: abs(o.design.image), templateImage: abs(o.design.templateImage) },
+          jacquardCardUrl: o.jacquardCardUrl ? `${API_BASE_URL}${o.jacquardCardUrl}` : null,
+          jacquardTxtUrl: o.jacquardTxtUrl ? `${API_BASE_URL}${o.jacquardTxtUrl}` : null,
+        })));
       })
-      .catch((err) => {
-        console.error('Error fetching orders:', err);
-        setLoading(false);
-      });
-  };
-
-  useEffect(() => {
-    fetchOrders();
+      .catch((err) => { console.error('Error fetching orders:', err); setNotice('Could not load the order queue.'); })
+      .finally(() => setLoading(false));
   }, []);
 
-  const handleGenerateJacquard = async (orderId) => {
+  useEffect(() => { fetchOrders(); }, [fetchOrders]);
+
+  const stateOf = (o) => (generatingId === o.id ? 'production' : o.status === 'Jacquard Card Generated' ? 'compiled' : 'ready');
+
+  const compile = async (orderId) => {
+    haptic(15);
     setGeneratingId(orderId);
+    setNotice('');
     try {
-      const response = await fetch(`${API_BASE_URL}/api/orders/${orderId}/generate-jacquard`, {
-        method: 'POST',
-      });
-      if (!response.ok) {
-        throw new Error('Failed to generate Jacquard cards');
-      }
-      fetchOrders(); // Refresh order details
+      const res = await fetch(`${API_BASE_URL}/api/orders/${orderId}/generate-jacquard`, { method: 'POST' });
+      if (!res.ok) throw new Error('Failed to generate Jacquard cards');
+      fetchOrders();
     } catch (err) {
       console.error(err);
-      alert('Failed to generate Jacquard loom pattern.');
+      setNotice('Failed to generate the loom files. Please try again.');
     } finally {
       setGeneratingId(null);
     }
   };
 
-  const handleDeleteOrder = async (orderId) => {
-    if (!confirm('Are you sure you want to delete this order?')) return;
+  const remove = async (orderId) => {
+    if (!window.confirm('Are you sure you want to delete this order?')) return;
     try {
-      const response = await fetch(`${API_BASE_URL}/api/orders/${orderId}`, {
-        method: 'DELETE',
-      });
-      if (!response.ok) {
-        throw new Error('Failed to delete order');
-      }
-      fetchOrders(); // Refresh orders
+      const res = await fetch(`${API_BASE_URL}/api/orders/${orderId}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed to delete order');
+      if (openId === orderId) setOpenId(null);
+      fetchOrders();
     } catch (err) {
       console.error(err);
-      alert('Failed to delete order.');
+      setNotice('Failed to delete the order.');
     }
   };
 
-  return (
-    <div className="weaver-dashboard-page">
-      <style>{`
-        .weaver-dashboard-page {
-          padding: 40px var(--container-padding);
-          max-width: 1400px;
-          margin: 0 auto;
-        }
-        .weaver-grid {
-          display: grid;
-          grid-template-columns: 1fr;
-          gap: 32px;
-          margin-top: 32px;
-        }
-        .order-card {
-          background: var(--card-bg, #1a1a24);
-          border: 1px solid var(--border-color, #2a2a35);
-          border-radius: 16px;
-          overflow: hidden;
-          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-          transition: transform 0.2s ease, border-color 0.2s ease;
-        }
-        .order-card:hover {
-          border-color: var(--cyan, #00f2fe);
-        }
-        .order-card-header {
-          padding: 24px;
-          border-bottom: 1px solid var(--border-color, #2a2a35);
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          flex-wrap: wrap;
-          gap: 16px;
-          background: rgba(255, 255, 255, 0.02);
-        }
-        .order-meta-info {
-          display: flex;
-          align-items: center;
-          gap: 16px;
-          flex-wrap: wrap;
-        }
-        .order-id-badge {
-          background: rgba(0, 242, 254, 0.1);
-          color: var(--cyan, #00f2fe);
-          padding: 6px 12px;
-          border-radius: 6px;
-          font-weight: 700;
-          font-family: monospace;
-          font-size: 1rem;
-        }
-        .order-date {
-          color: var(--text-secondary, #b3b3b3);
-          font-size: 0.9rem;
-        }
-        .status-badge {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          padding: 6px 12px;
-          border-radius: 20px;
-          font-size: 0.85rem;
-          font-weight: 600;
-        }
-        .status-badge.pending {
-          background: rgba(255, 170, 0, 0.1);
-          color: #ffaa00;
-        }
-        .status-badge.completed {
-          background: rgba(0, 230, 115, 0.1);
-          color: #00e673;
-        }
-        .order-card-body {
-          padding: 24px;
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 32px;
-        }
-        @media (max-width: 992px) {
-          .order-card-body {
-            grid-template-columns: 1fr;
-          }
-        }
-        .order-design-details {
-          display: flex;
-          gap: 20px;
-        }
-        .design-thumbnail-container {
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
-        }
-        .weaver-thumb {
-          width: 140px;
-          height: 140px;
-          object-fit: cover;
-          border-radius: 8px;
-          border: 1px solid var(--border-color, #2a2a35);
-        }
-        .thumb-label {
-          font-size: 0.8rem;
-          color: var(--text-secondary, #8c8c9e);
-          text-align: center;
-          margin-top: 4px;
-        }
-        .order-specs {
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
-        }
-        .specs-title {
-          font-size: 1.25rem;
-          color: var(--text-primary, #fff);
-          font-weight: 600;
-          margin-bottom: 4px;
-        }
-        .specs-row {
-          display: flex;
-          justify-content: space-between;
-          font-size: 0.95rem;
-          border-bottom: 1px dashed rgba(255, 255, 255, 0.05);
-          padding-bottom: 6px;
-        }
-        .specs-label {
-          color: var(--text-secondary, #8c8c9e);
-        }
-        .specs-value {
-          color: var(--text-primary, #fff);
-          font-weight: 500;
-        }
-        .jacquard-panel {
-          background: rgba(255, 255, 255, 0.02);
-          border: 1px dashed var(--border-color, #2a2a35);
-          border-radius: 12px;
-          padding: 20px;
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-          align-items: center;
-          text-align: center;
-          min-height: 220px;
-        }
-        .jacquard-visual-grid {
-          width: 100%;
-          max-height: 180px;
-          object-fit: contain;
-          border: 1px solid #3a3a4c;
-          border-radius: 6px;
-          margin-bottom: 16px;
-          background: #000;
-        }
-        .jacquard-stats {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 16px;
-          width: 100%;
-          margin-bottom: 16px;
-        }
-        .jacquard-stat-item {
-          background: rgba(0, 0, 0, 0.2);
-          padding: 8px;
-          border-radius: 6px;
-        }
-        .jacquard-stat-val {
-          display: block;
-          font-weight: 700;
-          color: var(--cyan, #00f2fe);
-          font-size: 1.1rem;
-        }
-        .jacquard-stat-lbl {
-          font-size: 0.75rem;
-          color: var(--text-secondary, #8c8c9e);
-        }
-        .btn-action {
-          width: 100%;
-          padding: 12px 20px;
-          border-radius: 8px;
-          font-weight: 600;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          border: none;
-        }
-        .btn-action.generate {
-          background: linear-gradient(135deg, #00f2fe, #4facfe);
-          color: #101018;
-        }
-        .btn-action.generate:hover:not(:disabled) {
-          transform: translateY(-2px);
-          opacity: 0.95;
-        }
-        .btn-action.generate:disabled {
-          background: #2a2a35;
-          color: #8c8c9e;
-          cursor: not-allowed;
-        }
-        .btn-action.download {
-          background: rgba(255, 255, 255, 0.05);
-          border: 1px solid var(--border-color, #2a2a35);
-          color: var(--text-primary, #fff);
-        }
-        .btn-action.download:hover {
-          background: rgba(255, 255, 255, 0.1);
-        }
-        .download-actions-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 12px;
-          width: 100%;
-        }
-        .empty-orders {
-          text-align: center;
-          padding: 80px 40px;
-          background: var(--card-bg, #1a1a24);
-          border: 1px dashed var(--border-color, #2a2a35);
-          border-radius: 16px;
-          color: var(--text-secondary, #8c8c9e);
-        }
-        .empty-icon {
-          font-size: 3rem;
-          color: var(--cyan, #00f2fe);
-          margin-bottom: 16px;
-          opacity: 0.7;
-        }
-      `}</style>
+  const counts = useMemo(() => {
+    const c = { ready: 0, production: 0, compiled: 0 };
+    orders.forEach((o) => { c[stateOf(o)] += 1; });
+    return c;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orders, generatingId]);
 
-      <div className="page-header">
-        <div className="page-header-text">
-          <h1 className="page-title">
-            Weaver <span className="text-cyan">Profile Dashboard</span>
-          </h1>
-          <p className="page-subtitle">
-            Manage custom design orders, view templates, and compile Jacquard card loom code.
-          </p>
-        </div>
-        <div className="page-header-decor">
-          <img src={sareesilhouette} alt="" className="decor-silhouette" />
-        </div>
+  const tiles = [
+    ['Total orders', orders.length, FileText],
+    ['Ready', counts.ready, Clock],
+    ['In production', counts.production, Factory],
+    ['Compiled', counts.compiled, CheckCircle2],
+  ];
+
+  return (
+    <div className="mx-auto w-full max-w-[1400px] px-4 pb-10 pt-5 sm:px-6 lg:px-10 lg:pt-8">
+      <header className="mb-6">
+        <h1 className="font-display text-3xl font-extrabold tracking-tight text-fg sm:text-4xl">
+          Weaver <span className="text-gold">portal</span>
+        </h1>
+        <p className="mt-1 text-sm text-muted sm:text-base">
+          Track production orders, review specs and download compiled loom files.
+        </p>
+      </header>
+
+      <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {tiles.map(([label, value, Icon]) => (
+          <div key={label} className={`${panel} flex items-center gap-3 p-4`}>
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-gold/15 text-gold"><Icon size={22} /></span>
+            <div>
+              <p className="font-display text-2xl font-bold leading-none text-fg">{value}</p>
+              <p className="mt-1 text-xs text-muted">{label}</p>
+            </div>
+          </div>
+        ))}
       </div>
 
+      {notice && (
+        <p role="alert" className="mb-4 flex items-center gap-2 rounded-2xl bg-red-500/10 p-3 text-sm text-red-400">
+          <AlertCircle size={18} className="shrink-0" /> {notice}
+        </p>
+      )}
+
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '80px', color: 'var(--text-secondary)' }}>
-          Loading weaver orders queue...
-        </div>
+        <div className={`${panel} grid place-items-center py-16`}><ShuttleLoader label="Loading the production queue…" /></div>
       ) : orders.length === 0 ? (
-        <div className="empty-orders">
-          <FiCpu className="empty-icon" />
-          <h3>No Orders Queued Yet</h3>
-          <p>Orders submitted by customers using "Buy Now" will appear here in real-time.</p>
+        <div className={`${panel} grid place-items-center gap-2 px-6 py-16 text-center`}>
+          <Cpu size={44} className="text-gold/70" />
+          <h2 className="font-display text-xl font-bold text-fg">No orders queued yet</h2>
+          <p className="max-w-sm text-sm text-muted">Orders placed from a design page will appear here as soon as they arrive.</p>
         </div>
       ) : (
-        <div className="weaver-grid">
-          {orders.map((order) => {
-            const isDone = order.status === 'Jacquard Card Generated';
-            const isGenerating = generatingId === order.id;
-
-            return (
-              <div key={order.id} className="order-card">
-                <div className="order-card-header">
-                  <div className="order-meta-info">
-                    <span className="order-id-badge">{order.id}</span>
-                    <span className="order-date">Ordered on: {order.createdOn}</span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <span className={`status-badge ${isDone ? 'completed' : 'pending'}`}>
-                      {isDone ? <FiCheckCircle /> : <FiClock />}
-                      {order.status}
-                    </span>
-                    <button
-                      onClick={() => handleDeleteOrder(order.id)}
-                      title="Delete Order"
-                      style={{
-                        background: 'rgba(255, 75, 75, 0.1)',
-                        border: '1px solid rgba(255, 75, 75, 0.2)',
-                        color: '#ff4b4b',
-                        padding: '6px 10px',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        transition: 'all 0.2s ease',
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background = 'rgba(255, 75, 75, 0.2)';
-                        e.currentTarget.style.borderColor = '#ff4b4b';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = 'rgba(255, 75, 75, 0.1)';
-                        e.currentTarget.style.borderColor = 'rgba(255, 75, 75, 0.2)';
-                      }}
-                    >
-                      <FiTrash2 />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="order-card-body">
-                  {/* Left Side: Design Preview */}
-                  <div className="order-design-details">
-                    <div className="design-thumbnail-container">
-                      <div>
-                        <img src={order.design.image} alt="Wearable Model" className="weaver-thumb" />
-                        <div className="thumb-label">Drape Preview</div>
-                      </div>
-                      <div>
-                        <img src={order.design.templateImage} alt="Weaving Layout" className="weaver-thumb" />
-                        <div className="thumb-label">Flat Layout</div>
-                      </div>
-                    </div>
-
-                    <div className="order-specs">
-                      <h4 className="specs-title">{order.design.name}</h4>
-                      <div className="specs-row" style={{ marginTop: '8px' }}>
-                        <span className="specs-label">Customer Name</span>
-                        <span className="specs-value">{order.customerName}</span>
-                      </div>
-                      <div className="specs-row">
-                        <span className="specs-label">Selected Fabric</span>
-                        <span className="specs-value">{order.materialName}</span>
-                      </div>
-                      <div className="specs-row">
-                        <span className="specs-label">Batch Group</span>
-                        <span className="specs-value" style={{ fontSize: '0.85rem', fontFamily: 'monospace' }}>#{order.batchId}</span>
-                      </div>
-                      <div className="specs-row">
-                        <span className="specs-label">Price Tag</span>
-                        <span className="specs-value" style={{ color: '#00e673', fontWeight: 'bold' }}>₹{order.price}</span>
-                      </div>
-                      <div className="specs-row">
-                        <span className="specs-label">Quantity</span>
-                        <span className="specs-value">{order.quantity} Saree{order.quantity > 1 ? 's' : ''}</span>
-                      </div>
-
-                      {order.yarnColors && (
-                        <div className="yarn-colors-section" style={{ marginTop: '20px' }}>
-                          <h5 style={{ fontSize: '0.9rem', color: 'var(--text-primary)', marginBottom: '10px', fontWeight: '600', letterSpacing: '0.5px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '6px' }}>
-                            Required Loom Yarn Colors
-                          </h5>
-                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
-                            {Object.entries(order.yarnColors).map(([key, col]) => (
-                              <div key={key} style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px', padding: '10px 6px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                <div style={{ width: '22px', height: '22px', borderRadius: '50%', backgroundColor: col.hex, border: '1px solid rgba(255,255,255,0.2)', boxShadow: '0 2px 5px rgba(0,0,0,0.3)', marginBottom: '6px' }} />
-                                <span style={{ fontSize: '0.75rem', color: 'var(--text-primary)', fontWeight: '600', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%', whiteSpace: 'nowrap' }} title={col.name}>
-                                  {col.name}
-                                </span>
-                                <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', marginTop: '2px', display: 'block' }}>
-                                  {col.role}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Right Side: Loom Processing Panel */}
-                  <div className="jacquard-panel">
-                    {isDone && order.loomOutputs ? (
-                      (() => {
-                        const currentLoomType = selectedLoom[order.id] || 'traditional';
-                        const loomData = order.loomOutputs[currentLoomType];
-
-                        return (
-                          <>
-                            {/* Loom Type Switcher */}
-                            <div style={{ display: 'flex', gap: '8px', width: '100%', marginBottom: '16px' }}>
-                              {Object.entries(order.loomOutputs).map(([key, output]) => (
-                                <button
-                                  key={key}
-                                  onClick={() => setSelectedLoom({ ...selectedLoom, [order.id]: key })}
-                                  style={{
-                                    flex: 1,
-                                    padding: '8px 4px',
-                                    borderRadius: '6px',
-                                    fontSize: '0.75rem',
-                                    fontWeight: '700',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s ease',
-                                    background: currentLoomType === key ? 'linear-gradient(135deg, #00f2fe, #4facfe)' : 'rgba(255,255,255,0.05)',
-                                    color: currentLoomType === key ? '#101018' : 'var(--text-primary, #fff)',
-                                    border: currentLoomType === key ? 'none' : '1px solid rgba(255,255,255,0.1)'
-                                  }}
-                                >
-                                  {key === 'traditional' ? 'Traditional' : key === 'digital' ? 'Digital' : 'Dobby'}
-                                </button>
-                              ))}
-                            </div>
-
-                            <img src={loomData.bmpUrl ? `${API_BASE_URL}${loomData.bmpUrl}` : order.jacquardCardUrl} alt="Loom Matrix" className="jacquard-visual-grid" />
-                            
-                            <div className="jacquard-stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', width: '100%', marginBottom: '16px' }}>
-                              {loomData.stats.map((st, i) => (
-                                <div className="jacquard-stat-item" key={i} style={{ background: 'rgba(0, 0, 0, 0.2)', padding: '8px', borderRadius: '6px' }}>
-                                  <span className="jacquard-stat-val" style={{ display: 'block', fontWeight: '700', color: 'var(--cyan, #00f2fe)', fontSize: '0.95rem' }}>
-                                    {st.value}
-                                  </span>
-                                  <span className="jacquard-stat-lbl" style={{ fontSize: '0.65rem', color: 'var(--text-secondary, #8c8c9e)' }}>
-                                    {st.label}
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
-
-                            {/* Punch Card Preview Block */}
-                            {loomData.punchCardPreview && loomData.punchCardPreview.length > 0 && (
-                              <div className="punch-card-preview-container" style={{ width: '100%', marginBottom: '16px', background: 'rgba(0, 0, 0, 0.3)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '8px', padding: '12px', textAlign: 'left', boxSizing: 'border-box' }}>
-                                <h5 style={{ fontSize: '0.8rem', color: 'var(--cyan, #00f2fe)', marginBottom: '8px', fontWeight: '700', letterSpacing: '0.5px', textTransform: 'uppercase', marginTop: 0 }}>
-                                  {currentLoomType === 'traditional' ? 'Punch Cards & Color Control Preview' : 'Harness Lift Plan Preview (First 10 Picks)'}
-                                </h5>
-                                <div style={{ maxHeight: '150px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.75rem', fontFamily: 'monospace' }}>
-                                  {currentLoomType === 'traditional' ? (
-                                    loomData.punchCardPreview.map((card, idx) => (
-                                      <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 6px', borderBottom: '1px solid rgba(255, 255, 255, 0.04)', gap: '8px' }}>
-                                        <span style={{ color: 'var(--text-primary, #fff)', fontWeight: '600', minWidth: '60px' }}>{card.card}</span>
-                                        <span style={{ color: 'rgba(255, 255, 255, 0.5)', letterSpacing: '1px', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={card.bits}>{card.bits}</span>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: '160px', justifyContent: 'flex-end' }}>
-                                          <span style={{ color: '#ffaa00', fontSize: '0.7rem' }}>RGB: {card.r}{card.g}{card.b}</span>
-                                          <span style={{ display: 'inline-block', width: '12px', height: '12px', borderRadius: '3px', backgroundColor: card.colorHex, border: '1px solid rgba(255, 255, 255, 0.2)' }} />
-                                          <span style={{ color: 'var(--text-secondary, #8c8c9e)', fontSize: '0.7rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '80px' }}>{card.colorName}</span>
-                                        </div>
-                                      </div>
-                                    ))
-                                  ) : (
-                                    loomData.punchCardPreview.map((pick, idx) => (
-                                      <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 6px', borderBottom: '1px solid rgba(255, 255, 255, 0.04)', gap: '8px' }}>
-                                        <span style={{ color: 'var(--text-primary, #fff)', fontWeight: '600', minWidth: '60px' }}>{pick.pick}</span>
-                                        <span style={{ color: 'var(--cyan, #00f2fe)', letterSpacing: '1px', flex: 1, textAlign: 'right' }}>{pick.bits}</span>
-                                      </div>
-                                    ))
-                                  )}
-                                </div>
-                              </div>
-                            )}
-
-                            <div className="download-actions-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', width: '100%' }}>
-                              {loomData.files.map((file, i) => (
-                                <a 
-                                  key={i} 
-                                  href={`${API_BASE_URL}${file.url}`} 
-                                  download={file.filename} 
-                                  className="btn-action download"
-                                  style={{
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    gap: '6px',
-                                    background: 'rgba(255, 255, 255, 0.05)',
-                                    border: '1px solid var(--border-color, #2a2a35)',
-                                    color: 'var(--text-primary, #fff)',
-                                    padding: '10px',
-                                    borderRadius: '6px',
-                                    fontSize: '0.8rem',
-                                    fontWeight: '600',
-                                    textDecoration: 'none'
-                                  }}
-                                >
-                                  <FiDownload /> {file.label.replace('Download ', '')}
-                                </a>
-                              ))}
-                            </div>
-                          </>
-                        );
-                      })()
-                    ) : isDone && !order.loomOutputs ? (
-                      // Fallback for orders created in the prior session without loomOutputs dictionary
-                      <>
-                        <img src={order.jacquardCardUrl} alt="Jacquard Matrix" className="jacquard-visual-grid" />
-                        <div className="jacquard-stats">
-                          <div className="jacquard-stat-item">
-                            <span className="jacquard-stat-val">{order.hookSize}</span>
-                            <span className="jacquard-stat-lbl">Warp Hooks</span>
-                          </div>
-                          <div className="jacquard-stat-item">
-                            <span className="jacquard-stat-val">{order.totalCards}</span>
-                            <span className="jacquard-stat-lbl">Punch Cards</span>
-                          </div>
-                          <div className="jacquard-stat-item">
-                            <span className="jacquard-stat-val">1-Bit</span>
-                            <span className="jacquard-stat-lbl">Jacquard B&W</span>
-                          </div>
-                        </div>
-
-                        <div className="download-actions-grid">
-                          <a href={order.jacquardCardUrl} download className="btn-action download">
-                            <FiDownload /> Loom BMP
-                          </a>
-                          <a href={order.jacquardTxtUrl} download className="btn-action download">
-                            <FiFileText /> Punch Cards (.txt)
-                          </a>
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <FiCpu style={{ fontSize: '3rem', color: 'var(--text-secondary)', marginBottom: '16px', opacity: 0.5 }} />
-                        <p style={{ color: 'var(--text-secondary)', marginBottom: '20px', fontSize: '0.95rem' }}>
-                          Process the customized flat layout to compile the binary lift matrices and Jacquard code cards for automated looms.
-                        </p>
-                        <button
-                          className="btn-action generate"
-                          onClick={() => handleGenerateJacquard(order.id)}
-                          disabled={isGenerating}
-                        >
-                          <FiCpu /> {isGenerating ? 'Compiling Loom Cards...' : 'Generate Loom Cards'}
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+        /* A real table from md up; stacked cards (labels from data-label) on phones */
+        <div className={`${panel} overflow-hidden md:p-2`}>
+          <table className="block w-full border-collapse text-sm md:table">
+            <thead className="hidden md:table-header-group">
+              <tr className="text-left text-xs uppercase tracking-wider text-muted">
+                {['Order', 'Design', 'Customer', 'Fabric', 'Qty', 'Price', 'Status', ''].map((h) => (
+                  <th key={h} className="px-4 py-3 font-semibold">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="block space-y-3 p-3 md:table-row-group md:space-y-0 md:p-0">
+              {orders.map((o) => {
+                const state = stateOf(o);
+                const open = openId === o.id;
+                const cell = 'flex items-center justify-between gap-4 py-1.5 before:text-xs before:text-muted before:content-[attr(data-label)] md:table-cell md:px-4 md:py-3 md:before:hidden';
+                return [
+                  <tr key={o.id} className={`block rounded-2xl border border-line bg-surface-2/40 p-4 md:table-row md:rounded-none md:border-0 md:border-t md:bg-transparent md:p-0 ${open ? 'md:bg-gold/5' : ''}`}>
+                    <td data-label="Order" className={`${cell} font-mono font-bold text-gold`}>
+                      <span className="truncate">{o.id}</span>
+                    </td>
+                    <td data-label="Design" className={cell}>
+                      <span className="flex items-center gap-3">
+                        <img src={o.design.image} alt="" className="h-12 w-12 rounded-xl object-cover" loading="lazy" />
+                        <span className="max-w-[16ch] truncate font-medium text-fg md:max-w-[20ch]">{o.design.name}</span>
+                      </span>
+                    </td>
+                    <td data-label="Customer" className={`${cell} text-fg`}>{o.customerName}</td>
+                    <td data-label="Fabric" className={`${cell} text-fg`}>{o.materialName}</td>
+                    <td data-label="Qty" className={`${cell} text-fg`}>{o.quantity}</td>
+                    <td data-label="Price" className={`${cell} font-semibold text-fg`}>₹{o.price}</td>
+                    <td data-label="Status" className={cell}><StatusBadge state={state} /></td>
+                    <td className="flex items-center justify-end gap-2 pt-2 md:table-cell md:px-4 md:py-3 md:text-right md:whitespace-nowrap">
+                      <button type="button" onClick={() => { haptic(); setOpenId(open ? null : o.id); }} aria-expanded={open}
+                        className="sf-tap inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-xl bg-gold/15 px-4 text-sm font-semibold text-gold md:flex-none">
+                        {open ? 'Hide' : 'Specs & files'}
+                        <ChevronDown size={16} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
+                      </button>
+                      <button type="button" onClick={() => remove(o.id)} aria-label={`Delete order ${o.id}`}
+                        className="sf-tap grid h-11 w-11 shrink-0 place-items-center rounded-xl text-red-400 hover:bg-red-500/10 md:inline-grid">
+                        {generatingId === o.id ? <Loader2 size={18} className="animate-spin" /> : <Trash2 size={18} />}
+                      </button>
+                    </td>
+                  </tr>,
+                  open && (
+                    <tr key={`${o.id}-detail`} className="block md:table-row">
+                      <td colSpan={8} className="block rounded-2xl border border-gold/30 bg-surface/60 md:table-cell md:rounded-none md:border-x-0">
+                        <AnimatePresence initial>
+                          <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}>
+                            <OrderDetail order={o} state={state} onCompile={() => compile(o.id)} />
+                          </motion.div>
+                        </AnimatePresence>
+                      </td>
+                    </tr>
+                  ),
+                ];
+              })}
+            </tbody>
+          </table>
         </div>
       )}
     </div>

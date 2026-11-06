@@ -18,6 +18,8 @@ except ImportError:
     pass
 
 from saree_generator import GenerateSaree, GenerateComplete
+import storage
+from flask import Response
 
 # Initialize generators
 generateSaree = GenerateSaree()
@@ -35,6 +37,7 @@ app = Flask(__name__)
 CORS(app)
 
 ON_VERCEL = os.environ.get('VERCEL') is not None
+_HERE = os.path.dirname(os.path.abspath(__file__))  # bundled seed data lives next to main.py
 
 if ON_VERCEL:
     BASE_DIR = "/tmp"
@@ -78,6 +81,15 @@ if ON_VERCEL:
     src_orders = os.path.join(SRC_DIR, "orders.json")
     if os.path.exists(src_orders) and not os.path.exists(ORDERS_JSON):
         shutil.copy2(src_orders, ORDERS_JSON)
+
+    # Seed accounts and saved simulations too, otherwise nobody can sign in on a
+    # fresh instance. /tmp is still per-instance and ephemeral: anything registered
+    # after deploy is lost on cold start until a real database replaces these files.
+    for seed in ("users.json", "simulations.json"):
+        src_seed = os.path.join(SRC_DIR, seed)
+        dst_seed = os.path.join(BASE_DIR, seed)
+        if os.path.exists(src_seed) and not os.path.exists(dst_seed):
+            shutil.copy2(src_seed, dst_seed)
 else:
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     STATIC_DIR = os.path.join(BASE_DIR, "static")
@@ -362,6 +374,8 @@ def generate_ai_saree(body_path, pallu_path, border_path, description, style, we
 # --- Database helpers ---
 
 def load_batches():
+    if storage.enabled():
+        return storage.db_load("batches", os.path.join(_HERE, "batches.json"), [])
     if not os.path.exists(BATCHES_JSON):
         # Return initial mock batches matched to the ones in frontend mockData.js
         # but configured to use our API paths where appropriate
@@ -419,6 +433,8 @@ def load_batches():
         return []
 
 def save_batches(batches):
+    if storage.enabled():
+        return storage.db_save("batches", batches)
     try:
         with open(BATCHES_JSON, 'w') as f:
             json.dump(batches, f, indent=2)
@@ -430,7 +446,15 @@ def save_batches(batches):
 @app.route('/api/static/<path:filename>')
 def serve_static(filename):
     """Serves generated design images and uploaded swatch files."""
-    return send_from_directory(STATIC_DIR, filename)
+    if os.path.exists(os.path.join(STATIC_DIR, filename)):
+        return send_from_directory(STATIC_DIR, filename)
+    # Not on this instance's disk: fall back to the database copy (serverless hosting)
+    if storage.enabled():
+        stored = storage.get_file(filename.replace("\\", "/"))
+        if stored:
+            content, mime = stored
+            return Response(content, mimetype=mime, headers={"Cache-Control": "public, max-age=3600"})
+    return jsonify({"error": "File not found"}), 404
 
 @app.route('/api/batches', methods=['GET'])
 def get_batches():
@@ -592,12 +616,15 @@ def generate():
     batches = load_batches()
     batches.insert(0, new_batch)
     save_batches(batches)
+    storage.persist_dir(batch_dir, STATIC_DIR)  # no-op unless a database is configured
 
     return jsonify(new_batch)
 
 # --- Orders and Jacquard Generation ---
 
 def load_orders():
+    if storage.enabled():
+        return storage.db_load("orders", os.path.join(_HERE, "orders.json"), [])
     if not os.path.exists(ORDERS_JSON):
         with open(ORDERS_JSON, 'w') as f:
             json.dump([], f, indent=2)
@@ -610,6 +637,8 @@ def load_orders():
         return []
 
 def save_orders(orders):
+    if storage.enabled():
+        return storage.db_save("orders", orders)
     try:
         with open(ORDERS_JSON, 'w') as f:
             json.dump(orders, f, indent=2)
@@ -985,6 +1014,8 @@ def run_jacquard(order_id):
     os.makedirs(order_dir, exist_ok=True)
     
     success, err_msg, preview_data = generate_loom_files(local_path, order_dir)
+    if success:
+        storage.persist_dir(order_dir, STATIC_DIR)  # no-op unless a database is configured
     
     if not success:
         return jsonify({"error": f"Failed to generate loom files: {err_msg}"}), 500
@@ -1076,6 +1107,8 @@ SIMULATIONS_JSON = os.path.join(BASE_DIR, "simulations.json")
 
 
 def load_simulations():
+    if storage.enabled():
+        return storage.db_load("simulations", os.path.join(_HERE, "simulations.json"), [])
     if not os.path.exists(SIMULATIONS_JSON):
         return []
     try:
@@ -1087,6 +1120,8 @@ def load_simulations():
 
 
 def save_simulations(sims):
+    if storage.enabled():
+        return storage.db_save("simulations", sims)
     try:
         with open(SIMULATIONS_JSON, 'w') as f:
             json.dump(sims, f, indent=2)
@@ -1151,6 +1186,8 @@ def _hash_password(password: str) -> str:
 
 
 def _load_users() -> list:
+    if storage.enabled():
+        return storage.db_load("users", os.path.join(_HERE, "users.json"), [])
     if not os.path.exists(USERS_JSON):
         return []
     with open(USERS_JSON, 'r') as f:
@@ -1161,6 +1198,8 @@ def _load_users() -> list:
 
 
 def _save_users(users: list):
+    if storage.enabled():
+        return storage.db_save("users", users)
     with open(USERS_JSON, 'w') as f:
         json.dump(users, f, indent=2)
 

@@ -3,6 +3,17 @@ import { API_BASE_URL, AUTH_ENABLED } from '../config.js';
 
 const AuthContext = createContext(null);
 
+// The API can answer with an empty or non-JSON body (cold start, wrong routing, 5xx);
+// turn that into a readable error instead of "Unexpected end of JSON input".
+async function readJson(res) {
+  const text = await res.text();
+  try {
+    return text ? JSON.parse(text) : {};
+  } catch {
+    throw new Error(`The server sent an unexpected response (HTTP ${res.status}). Please try again.`);
+  }
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -31,8 +42,9 @@ export function AuthProvider({ children }) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Login failed');
+    const data = await readJson(res);
+    if (!res.ok) throw new Error(data.error || `Login failed (HTTP ${res.status}). The API may be unreachable.`);
+    if (!data.user) throw new Error('Login failed: the server returned no user.');
     setUser(data.user);
     localStorage.setItem('sf_user', JSON.stringify(data.user));
     return data.user;
@@ -44,8 +56,9 @@ export function AuthProvider({ children }) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, email, phone, password }),
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Signup failed');
+    const data = await readJson(res);
+    if (!res.ok) throw new Error(data.error || `Signup failed (HTTP ${res.status}). The API may be unreachable.`);
+    if (!data.user) throw new Error('Signup failed: the server returned no user.');
     setUser(data.user);
     localStorage.setItem('sf_user', JSON.stringify(data.user));
     return data.user;

@@ -1,8 +1,6 @@
 import os
 import shutil
 import random
-import hashlib
-import uuid
 from datetime import datetime
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
@@ -18,23 +16,19 @@ except ImportError:
     pass
 
 from saree_generator import GenerateSaree, GenerateComplete
+import storage
+from flask import Response
 
 # Initialize generators
 generateSaree = GenerateSaree()
 generetorFull = GenerateComplete()
-
-# ---------------------------------------------------------------------------
-# Auth feature flag
-# Set AUTH_ENABLED=false in your environment / .env file to disable all auth.
-# When disabled, /api/auth/* routes return 503 and the frontend skips auth.
-# ---------------------------------------------------------------------------
-AUTH_ENABLED = os.environ.get('AUTH_ENABLED', 'true').lower() not in ('false', '0', 'no')
 
 app = Flask(__name__)
 # Enable CORS for all routes to handle requests from the React frontend port
 CORS(app)
 
 ON_VERCEL = os.environ.get('VERCEL') is not None
+_HERE = os.path.dirname(os.path.abspath(__file__))  # bundled seed data lives next to main.py
 
 if ON_VERCEL:
     BASE_DIR = "/tmp"
@@ -78,6 +72,14 @@ if ON_VERCEL:
     src_orders = os.path.join(SRC_DIR, "orders.json")
     if os.path.exists(src_orders) and not os.path.exists(ORDERS_JSON):
         shutil.copy2(src_orders, ORDERS_JSON)
+
+    # Seed saved simulations too, so a fresh instance is not empty. /tmp is still per-instance and ephemeral: anything registered
+    # after deploy is lost on cold start until a real database replaces these files.
+    for seed in ("simulations.json",):
+        src_seed = os.path.join(SRC_DIR, seed)
+        dst_seed = os.path.join(BASE_DIR, seed)
+        if os.path.exists(src_seed) and not os.path.exists(dst_seed):
+            shutil.copy2(src_seed, dst_seed)
 else:
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     STATIC_DIR = os.path.join(BASE_DIR, "static")
@@ -362,6 +364,8 @@ def generate_ai_saree(body_path, pallu_path, border_path, description, style, we
 # --- Database helpers ---
 
 def load_batches():
+    if storage.enabled():
+        return storage.db_load("batches", os.path.join(_HERE, "batches.json"), [])
     if not os.path.exists(BATCHES_JSON):
         # Return initial mock batches matched to the ones in frontend mockData.js
         # but configured to use our API paths where appropriate
@@ -419,6 +423,8 @@ def load_batches():
         return []
 
 def save_batches(batches):
+    if storage.enabled():
+        return storage.db_save("batches", batches)
     try:
         with open(BATCHES_JSON, 'w') as f:
             json.dump(batches, f, indent=2)
@@ -430,7 +436,15 @@ def save_batches(batches):
 @app.route('/api/static/<path:filename>')
 def serve_static(filename):
     """Serves generated design images and uploaded swatch files."""
-    return send_from_directory(STATIC_DIR, filename)
+    if os.path.exists(os.path.join(STATIC_DIR, filename)):
+        return send_from_directory(STATIC_DIR, filename)
+    # Not on this instance's disk: fall back to the database copy (serverless hosting)
+    if storage.enabled():
+        stored = storage.get_file(filename.replace("\\", "/"))
+        if stored:
+            content, mime = stored
+            return Response(content, mimetype=mime, headers={"Cache-Control": "public, max-age=3600"})
+    return jsonify({"error": "File not found"}), 404
 
 @app.route('/api/batches', methods=['GET'])
 def get_batches():
@@ -592,12 +606,15 @@ def generate():
     batches = load_batches()
     batches.insert(0, new_batch)
     save_batches(batches)
+    storage.persist_dir(batch_dir, STATIC_DIR)  # no-op unless a database is configured
 
     return jsonify(new_batch)
 
 # --- Orders and Jacquard Generation ---
 
 def load_orders():
+    if storage.enabled():
+        return storage.db_load("orders", os.path.join(_HERE, "orders.json"), [])
     if not os.path.exists(ORDERS_JSON):
         with open(ORDERS_JSON, 'w') as f:
             json.dump([], f, indent=2)
@@ -610,6 +627,8 @@ def load_orders():
         return []
 
 def save_orders(orders):
+    if storage.enabled():
+        return storage.db_save("orders", orders)
     try:
         with open(ORDERS_JSON, 'w') as f:
             json.dump(orders, f, indent=2)
@@ -985,6 +1004,8 @@ def run_jacquard(order_id):
     os.makedirs(order_dir, exist_ok=True)
     
     success, err_msg, preview_data = generate_loom_files(local_path, order_dir)
+    if success:
+        storage.persist_dir(order_dir, STATIC_DIR)  # no-op unless a database is configured
     
     if not success:
         return jsonify({"error": f"Failed to generate loom files: {err_msg}"}), 500
@@ -1076,6 +1097,8 @@ SIMULATIONS_JSON = os.path.join(BASE_DIR, "simulations.json")
 
 
 def load_simulations():
+    if storage.enabled():
+        return storage.db_load("simulations", os.path.join(_HERE, "simulations.json"), [])
     if not os.path.exists(SIMULATIONS_JSON):
         return []
     try:
@@ -1087,6 +1110,8 @@ def load_simulations():
 
 
 def save_simulations(sims):
+    if storage.enabled():
+        return storage.db_save("simulations", sims)
     try:
         with open(SIMULATIONS_JSON, 'w') as f:
             json.dump(sims, f, indent=2)
@@ -1132,104 +1157,6 @@ def delete_simulation(sim_id):
         return jsonify({"error": "Simulation not found"}), 404
     save_simulations(kept)
     return jsonify({"success": True})
-
-
-# ===========================================================================
-# AUTH ROUTES
-# ===========================================================================
-
-# --- Users JSON storage helpers ---
-if ON_VERCEL:
-    USERS_JSON = os.path.join(BASE_DIR, "users.json")
-else:
-    USERS_JSON = os.path.join(BASE_DIR, "users.json")
-
-
-def _hash_password(password: str) -> str:
-    """Returns a sha-256 hex digest of the password (simple; replace with bcrypt in production)."""
-    return hashlib.sha256(password.encode('utf-8')).hexdigest()
-
-
-def _load_users() -> list:
-    if not os.path.exists(USERS_JSON):
-        return []
-    with open(USERS_JSON, 'r') as f:
-        try:
-            return json.load(f)
-        except json.JSONDecodeError:
-            return []
-
-
-def _save_users(users: list):
-    with open(USERS_JSON, 'w') as f:
-        json.dump(users, f, indent=2)
-
-
-def _user_public(user: dict) -> dict:
-    """Returns a safe user dict without the password hash."""
-    return {"id": user["id"], "name": user["name"], "email": user["email"], "phone": user["phone"]}
-
-
-@app.route('/api/auth/register', methods=['POST'])
-def auth_register():
-    """Registers a new user. Disabled when AUTH_ENABLED is False."""
-    if not AUTH_ENABLED:
-        return jsonify({"error": "Authentication is disabled on this server."}), 503
-
-    data = request.get_json(force=True, silent=True) or {}
-    name = (data.get('name') or '').strip()
-    email = (data.get('email') or '').strip().lower()
-    phone = (data.get('phone') or '').strip()
-    password = data.get('password') or ''
-
-    if not name or not email or not phone or not password:
-        return jsonify({"error": "name, email, phone and password are required."}), 400
-    if len(password) < 6:
-        return jsonify({"error": "Password must be at least 6 characters."}), 400
-
-    users = _load_users()
-    if any(u['email'] == email for u in users):
-        return jsonify({"error": "An account with that email already exists."}), 409
-
-    new_user = {
-        "id": str(uuid.uuid4()),
-        "name": name,
-        "email": email,
-        "phone": phone,
-        "password_hash": _hash_password(password),
-        "created_at": datetime.utcnow().isoformat(),
-    }
-    users.append(new_user)
-    _save_users(users)
-
-    return jsonify({"user": _user_public(new_user)}), 201
-
-
-@app.route('/api/auth/login', methods=['POST'])
-def auth_login():
-    """Authenticates a user by email and password. Disabled when AUTH_ENABLED is False."""
-    if not AUTH_ENABLED:
-        return jsonify({"error": "Authentication is disabled on this server."}), 503
-
-    data = request.get_json(force=True, silent=True) or {}
-    email = (data.get('email') or '').strip().lower()
-    password = data.get('password') or ''
-
-    if not email or not password:
-        return jsonify({"error": "email and password are required."}), 400
-
-    users = _load_users()
-    user = next((u for u in users if u['email'] == email), None)
-    if not user or user['password_hash'] != _hash_password(password):
-        return jsonify({"error": "Invalid email or password."}), 401
-
-    return jsonify({"user": _user_public(user)}), 200
-
-
-@app.route('/api/auth/status', methods=['GET'])
-def auth_status():
-    """Returns whether authentication is enabled on this backend."""
-    return jsonify({"auth_enabled": AUTH_ENABLED}), 200
 
 
 if __name__ == '__main__':

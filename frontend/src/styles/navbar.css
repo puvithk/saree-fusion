@@ -1,0 +1,151 @@
+/* ============================================
+   Navbar — full-width desktop bar + mobile drawer
+   ============================================ */
+
+.navbar {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: saturate(180%) blur(14px);
+  -webkit-backdrop-filter: saturate(180%) blur(14px);
+  box-shadow: 0 1px 0 var(--gray-7), 0 6px 24px rgba(26, 26, 46, 0.04);
+}
+
+/* 100% width: no 1280px cap, comfortable fluid gutters */
+.navbar-inner,
+.breadcrumb-bar {
+  max-width: none;
+  width: 100%;
+  padding-inline: clamp(16px, 3vw, 56px);
+}
+
+.navbar-inner {
+  height: 72px;
+  min-height: 72px;
+  max-height: 72px;
+  gap: clamp(12px, 2vw, 32px);
+}
+
+/* Nav takes the middle and centres itself so it uses the full bar */
+.navbar-nav {
+  flex: 1;
+  justify-content: center;
+  gap: clamp(16px, 2.2vw, 36px);
+  flex-shrink: 1;
+}
+
+.navbar-actions { gap: 10px; }
+
+.nav-link { padding: 10px 2px; }
+.nav-link::after { bottom: 2px; background: linear-gradient(90deg, var(--cyan), var(--gold)); height: 2px; }
+
+.nav-burger { display: none; }
+.mobile-scrim, .mobile-menu { display: none; }
+
+/* ---------- Tablet & phone: hamburger ---------- */
+@media (max-width: 1100px) {
+  .navbar-nav,
+  .navbar-actions { display: none; }
+
+  .navbar-inner { height: 64px; min-height: 64px; max-height: 64px; }
+
+  .nav-burger {
+    position: relative;
+    display: block;
+    flex: none;
+    width: 46px;
+    height: 46px;
+    margin-left: auto;
+    border-radius: 12px;
+    background: var(--gray-8);
+    transition: background-color 0.2s;
+  }
+  .nav-burger:hover { background: var(--cyan-light); }
+
+  /* three lines that morph into an X */
+  .nav-burger span {
+    position: absolute;
+    left: 13px;
+    width: 20px;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--dark);
+    transition: transform 0.3s var(--ease-out), opacity 0.2s, top 0.3s var(--ease-out);
+  }
+  .nav-burger span:nth-child(1) { top: 16px; }
+  .nav-burger span:nth-child(2) { top: 22px; }
+  .nav-burger span:nth-child(3) { top: 28px; }
+  .nav-burger.is-open span:nth-child(1) { top: 22px; transform: rotate(45deg); }
+  .nav-burger.is-open span:nth-child(2) { opacity: 0; transform: scaleX(0.2); }
+  .nav-burger.is-open span:nth-child(3) { top: 22px; transform: rotate(-45deg); }
+
+  .mobile-scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 190;
+    background: rgba(14, 14, 26, 0.5);
+    backdrop-filter: blur(3px);
+  }
+
+  .mobile-menu {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    width: min(88vw, 380px);
+    padding: 84px 20px calc(20px + env(safe-area-inset-bottom));
+    background: var(--white);
+    box-shadow: -16px 0 48px rgba(0, 0, 0, 0.18);
+    overflow-y: auto;
+  }
+
+  .mobile-links { list-style: none; display: grid; gap: 4px; }
+
+  .mobile-link {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 14px;
+    border-radius: var(--radius-md);
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--gray-1);
+  }
+  .mobile-link > svg:first-child { font-size: 20px; color: var(--gray-4); }
+  .mobile-link span { flex: 1; }
+  .mobile-chev { font-size: 12px; color: var(--gray-5); }
+  .mobile-link:hover { background: var(--gray-8); }
+  .mobile-link.active {
+    background: linear-gradient(90deg, var(--cyan-light), #fbf3d6);
+    color: var(--dark);
+    font-weight: 600;
+    box-shadow: inset 3px 0 0 var(--cyan);
+  }
+  .mobile-link.active > svg:first-child { color: var(--cyan-deep); }
+
+  .mobile-foot {
+    display: grid;
+    gap: 14px;
+    margin-top: auto;
+    padding-top: 20px;
+    border-top: 1px solid var(--gray-7);
+  }
+  .mobile-quick { display: flex; gap: 8px; }
+  .mobile-foot .navbar-user { justify-content: space-between; }
+  .mobile-foot .navbar-username { display: inline; }
+  .mobile-foot .navbar-signin-link { justify-content: center; padding: 12px; }
+}
+
+@media (max-width: 480px) {
+  .navbar-inner { padding-inline: 14px; height: 60px; min-height: 60px; max-height: 60px; }
+  .logo-tagline { display: none; }
+  .logo-icon, .logo-icon img { width: 38px; height: 38px; }
+  .mobile-menu { padding-top: 76px; }
+}
+
+/* ---------- Wide screens keep the nav roomy ---------- */
+@media (min-width: 1101px) and (max-width: 1280px) {
+  .logo-tagline { display: none; }
+}

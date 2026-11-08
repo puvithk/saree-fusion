@@ -1,0 +1,12 @@
+[WEAVING INFORMATION FILE]
+Version=1.1
+Date=2026-07-22
+Developer=SareeFusion CAD
+[SYSTEM]
+Rethreads=None
+[WARP]
+Threads=200
+Color=1
+[WEFT]
+Threads=100
+Color=2

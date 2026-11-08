@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiUploadCloud, FiX, FiDownload, FiPrinter, FiRefreshCw, FiArrowLeft, FiLogOut, FiArrowRight } from 'react-icons/fi';
+import { UploadCloud, X, Download, Printer, RefreshCw, ArrowLeft, LogOut, ArrowRight, ChevronDown } from 'lucide-react';
 import { useSareeDesign } from '../context/SareeDesignContext.jsx';
 import ColorPickerOverlay from '../components/saree/ColorPickerOverlay';
 import CadViewer from '../components/saree/CadViewer';
@@ -8,14 +8,15 @@ import SimulationCanvas from '../components/saree/SimulationCanvas';
 import CollectionAutoSaver from '../components/saree/CollectionAutoSaver';
 import GeneratingOverlay from '../components/saree/GeneratingOverlay';
 import { generateBatch } from '../utils/generateBatch';
+import { haptic } from '../utils/haptics';
 
 // three.js is only downloaded when the 3D view is first opened
 const DrapeViewer3D = lazy(() => import('../components/saree/DrapeViewer3D'));
 
 const VIEWS = [
-  { key: 'layout', label: 'Layout' },
-  { key: 'cad',    label: 'CAD Sketch' },
-  { key: '3d',     label: '3D Drape' },
+  { key: 'layout', label: 'Flat template' },
+  { key: 'cad',    label: 'CAD sketch' },
+  { key: '3d',     label: 'Mannequin drape' },
 ];
 
 const DRAPE_STYLES = [
@@ -134,43 +135,55 @@ function extractYarnColors(ctx, w, h) {
     });
 }
 
-// ─── Numeric input ────────────────────────────────────────────────────────────
+// ─── Small UI atoms (Tailwind, theme-aware) ──────────────────────────────────
+const panel = 'rounded-2xl border border-line bg-glass backdrop-blur-md';
+const tap = 'sf-tap inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold';
+
+function SectionTitle({ children }) {
+  return <div className="mb-2 mt-4 text-[11px] font-bold uppercase tracking-widest text-gold first:mt-0">{children}</div>;
+}
+
+// Collapsible on phones/tablets; always open from the xl breakpoint up
+function Accordion({ title, children, defaultOpen = false }) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <section className={`${panel} overflow-hidden`}>
+      <button type="button" onClick={() => setOpen(o => !o)} aria-expanded={open}
+        className="sf-tap flex min-h-12 w-full items-center justify-between px-4 text-left text-sm font-bold text-fg xl:pointer-events-none">
+        {title}
+        <ChevronDown size={18} className={`text-muted transition-transform xl:hidden ${open ? 'rotate-180' : ''}`} />
+      </button>
+      <div className={`${open ? 'block' : 'hidden'} px-4 pb-4 xl:block`}>{children}</div>
+    </section>
+  );
+}
+
+// ─── Number input ─────────────────────────────────────────────────────────────
 function NumInput({ label, unit, value, onChange, min = 0, step = 1 }) {
   return (
-    <div style={{ marginBottom: 8 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ color: '#aaa', fontSize: 12 }}>{label}</span>
-        <span style={{ color: '#666', fontSize: 11 }}>{unit}</span>
-      </div>
+    <label className="mb-2.5 block">
+      <span className="flex items-center justify-between text-xs">
+        <span className="text-muted">{label}</span>
+        <span className="text-muted/70">{unit}</span>
+      </span>
       <input
-        type="number" min={min} step={step} value={value}
+        type="number" inputMode="decimal" min={min} step={step} value={value}
         onChange={e => onChange(parseFloat(e.target.value) || 0)}
-        style={{
-          width: '100%', padding: '5px 8px', marginTop: 3,
-          background: '#2a2d3e', color: '#fff', border: '1px solid #3a3d4e',
-          borderRadius: 6, fontSize: 13, outline: 'none',
-        }}
+        className="mt-1 h-11 w-full rounded-xl border border-line bg-surface-2/70 px-3 text-base text-fg focus:border-gold focus:outline-none"
       />
-    </div>
+    </label>
   );
 }
 
 // ─── Stats card ───────────────────────────────────────────────────────────────
 function StatCard({ title, rows }) {
   return (
-    <div style={{
-      background: '#1e2235', borderRadius: 10, padding: '14px 18px',
-      flex: '1 1 200px', minWidth: 180,
-    }}>
-      <div style={{ color: '#f0a030', fontSize: 11, fontWeight: 700,
-        letterSpacing: 1, marginBottom: 10 }}>{title}</div>
+    <div className={`${panel} p-4`}>
+      <div className="mb-2 text-[11px] font-bold uppercase tracking-widest text-gold">{title}</div>
       {rows.map(([label, val]) => (
-        <div key={label} style={{ display: 'flex', justifyContent: 'space-between',
-          padding: '3px 0', borderBottom: '1px solid #2a2d40' }}>
-          <span style={{ color: '#aaa', fontSize: 13 }}>{label}</span>
-          <span style={{ color: '#fff', fontSize: 13, fontWeight: label === 'Total' ? 700 : 400 }}>
-            {val}
-          </span>
+        <div key={label} className="flex justify-between border-b border-line py-1.5 last:border-0">
+          <span className="text-sm text-muted">{label}</span>
+          <span className={`text-sm text-fg ${label === 'Total' ? 'font-bold' : ''}`}>{val}</span>
         </div>
       ))}
     </div>
@@ -181,28 +194,23 @@ function StatCard({ title, rows }) {
 function MotifUploader({ label, slot, onChange }) {
   const inputRef = useRef(null);
   return (
-    <div style={{ marginBottom: 16, background: '#1e2235', borderRadius: 10, padding: '12px 14px' }}>
-      <div style={{ color: '#f0a030', fontSize: 11, fontWeight: 700,
-        letterSpacing: 1, marginBottom: 8 }}>{label.toUpperCase()}</div>
+    <div className="mb-3 rounded-2xl border border-line bg-surface-2/50 p-3">
+      <div className="mb-2 text-[11px] font-bold uppercase tracking-widest text-gold">{label}</div>
       {slot.url ? (
-        <div style={{ position: 'relative', marginBottom: 8 }}>
-          <img src={slot.url} alt={label}
-            style={{ width: '100%', height: 64, objectFit: 'cover', borderRadius: 6 }} />
-          <button onClick={() => onChange({ ...slot, url: null, el: null })}
-            style={{ position: 'absolute', top: 4, right: 4, background: 'rgba(0,0,0,0.6)',
-              border: 'none', borderRadius: 4, color: '#fff', cursor: 'pointer', padding: '2px 5px' }}>
-            <FiX size={12} />
+        <div className="relative mb-2">
+          <img src={slot.url} alt={label} className="h-20 w-full rounded-xl object-cover" />
+          <button type="button" aria-label={`Remove ${label}`} onClick={() => onChange({ ...slot, url: null, el: null })}
+            className="sf-tap absolute right-1 top-1 grid h-11 w-11 place-items-center text-white">
+            <span className="grid h-7 w-7 place-items-center rounded-full bg-black/65"><X size={14} /></span>
           </button>
         </div>
       ) : (
-        <div onClick={() => inputRef.current.click()}
-          style={{ border: '1.5px dashed #3a3d4e', borderRadius: 6, height: 56,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer', color: '#666', fontSize: 12, marginBottom: 8 }}>
-          <FiUploadCloud size={14} style={{ marginRight: 6 }} /> Upload {label}
-        </div>
+        <button type="button" onClick={() => inputRef.current.click()}
+          className="sf-tap mb-2 flex h-16 w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-line text-sm text-muted">
+          <UploadCloud size={18} /> Upload {label}
+        </button>
       )}
-      <input ref={inputRef} type="file" accept="image/*" style={{ display: 'none' }}
+      <input ref={inputRef} type="file" accept="image/*" hidden
         onChange={e => {
           const file = e.target.files[0];
           if (!file) return;
@@ -212,40 +220,61 @@ function MotifUploader({ label, slot, onChange }) {
           el.src = url;
         }}
       />
-      {/* Scale */}
-      <div style={{ marginBottom: 6 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-          <span style={{ color: '#aaa', fontSize: 11 }}>Scale</span>
-          <span style={{ color: '#ccc', fontSize: 11 }}>{slot.scale.toFixed(2)}×</span>
-        </div>
+      <label className="mb-1 block">
+        <span className="flex justify-between text-xs text-muted"><span>Scale</span><span>{slot.scale.toFixed(2)}×</span></span>
         <input type="range" min="0.2" max="3" step="0.05" value={slot.scale}
           onChange={e => onChange({ ...slot, scale: parseFloat(e.target.value) })}
-          style={{ width: '100%', accentColor: '#f0a030' }} />
-      </div>
-      {/* Rotation */}
-      <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-          <span style={{ color: '#aaa', fontSize: 11 }}>Rotation</span>
-          <span style={{ color: '#ccc', fontSize: 11 }}>{slot.rot}°</span>
-        </div>
+          className="h-8 w-full accent-[#e3bb4f]" />
+      </label>
+      <label className="block">
+        <span className="flex justify-between text-xs text-muted"><span>Rotation</span><span>{slot.rot}°</span></span>
         <input type="range" min="0" max="360" step="1" value={slot.rot}
           onChange={e => onChange({ ...slot, rot: parseInt(e.target.value) })}
-          style={{ width: '100%', accentColor: '#f0a030' }} />
-      </div>
+          className="h-8 w-full accent-[#e3bb4f]" />
+      </label>
     </div>
   );
 }
 
+// Pinch-to-zoom for the flat template; native touch scrolling handles panning
+function usePinchZoom(ref, zoom, setZoom) {
+  const start = useRef(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return undefined;
+    const dist = (t) => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+    const down = (e) => { if (e.touches.length === 2) start.current = { d: dist(e.touches), z: zoom }; };
+    const move = (e) => {
+      if (e.touches.length === 2 && start.current) {
+        e.preventDefault();
+        setZoom(Math.min(2, Math.max(0.1, start.current.z * (dist(e.touches) / start.current.d))));
+      }
+    };
+    const up = () => { start.current = null; };
+    el.addEventListener('touchstart', down, { passive: true });
+    el.addEventListener('touchmove', move, { passive: false });
+    el.addEventListener('touchend', up);
+    return () => {
+      el.removeEventListener('touchstart', down);
+      el.removeEventListener('touchmove', move);
+      el.removeEventListener('touchend', up);
+    };
+  }, [ref, zoom, setZoom]);
+}
+
 // ─── Simulation page ──────────────────────────────────────────────────────────
 export default function Simulation() {
-  const [p, setP] = useState({ ...DEF });
+  const { assets } = useSareeDesign();
+  // Set when a saved layout is re-opened from the collection: restores its loom
+  // parameters and colourway, and keeps saving into the same collection entry.
+  const restore = assets.restore || null;
+  const [p, setP] = useState({ ...DEF, ...(restore?.params || {}) });
   const [imgs, setImgs] = useState({
-    border: { url: null, el: null, color: '#c47b1a', tint: 0.4,  scale: 1, rot: 0 },
-    body:   { url: null, el: null, color: '#e01050', tint: 0.4,  scale: 1, rot: 0 },
-    pallu:  { url: null, el: null, color: '#4a2080', tint: 0.35, scale: 1, rot: 0 },
+    border: { url: null, el: null, color: '#c47b1a', tint: 0.4,  scale: 1, rot: 0, ...(restore?.palette?.border || {}) },
+    body:   { url: null, el: null, color: '#e01050', tint: 0.4,  scale: 1, rot: 0, ...(restore?.palette?.body || {}) },
+    pallu:  { url: null, el: null, color: '#4a2080', tint: 0.35, scale: 1, rot: 0, ...(restore?.palette?.pallu || {}) },
   });
   const [view, setView] = useState('layout');
-  const { assets } = useSareeDesign();
   const [drapeStyle, setDrapeStyle] = useState(assets.style || 'normal');
   const navigate = useNavigate();
   const [yarnColors, setYarnColors] = useState([]);
@@ -253,6 +282,42 @@ export default function Simulation() {
   const [generating, setGenerating] = useState(false);
   const [genError, setGenError] = useState('');
   const canvasRef = useRef(null);
+  const imgsRef = useRef(imgs);
+  useEffect(() => { imgsRef.current = imgs; }, [imgs]);
+
+  // Small JPEG copies of the three swatches, saved with the collection entry so the
+  // layout can be re-opened and edited later (object URLs do not survive a reload)
+  const getImages = useCallback(() => {
+    const out = {};
+    ['body', 'border', 'pallu'].forEach((key) => {
+      const el = imgsRef.current[key]?.el;
+      if (!el || !el.width) return;
+      const k = Math.min(1, 640 / Math.max(el.width, el.height));
+      const c = document.createElement('canvas');
+      c.width = Math.max(1, Math.round(el.width * k));
+      c.height = Math.max(1, Math.round(el.height * k));
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, c.width, c.height);
+      ctx.drawImage(el, 0, 0, c.width, c.height);
+      out[key] = c.toDataURL('image/jpeg', 0.8);
+    });
+    return out;
+  }, []);
+  const viewportRef = useRef(null);
+  usePinchZoom(viewportRef, zoom, setZoom);
+
+  // Fit the whole template inside the scroll viewport
+  const fitToView = useCallback(() => {
+    const box = viewportRef.current;
+    const c = canvasRef.current;
+    if (!box || !c) return;
+    const r = c.getBoundingClientRect();
+    const w = r.width / zoom;
+    const h = r.height / zoom;
+    if (!w || !h) return;
+    setZoom(Math.max(0.1, Math.min(1, (box.clientWidth - 4) / w, (box.clientHeight || h) / h)));
+  }, [zoom]);
 
   const specs = computeSpecs(p);
 
@@ -389,247 +454,185 @@ export default function Simulation() {
   }
 
   // ── UI ──
-  return (
-    <div style={{ background: '#12152a', minHeight: '100vh', color: '#fff',
-      fontFamily: "'Inter', sans-serif", padding: '0 0 40px' }}>
+  const zoomPct = Math.round(zoom * 100);
+  const presetActive = (v) => Math.abs(zoom - v) < 0.005;
 
-      <CollectionAutoSaver canvasRef={canvasRef} config={saveConfig} hasAssets={hasAssets} />
+  return (
+    <div className="mx-auto w-full max-w-[1600px] px-4 pb-10 pt-4 sm:px-6 xl:px-8">
+
+      <CollectionAutoSaver canvasRef={canvasRef} config={saveConfig} hasAssets={hasAssets}
+        getImages={getImages} sessionId={restore?.id} />
       {(generating || genError) && (
         <GeneratingOverlay error={genError} onRetry={handleNextStep} onDismiss={() => setGenError('')} />
       )}
 
       {/* Header */}
-      <div style={{ background: '#1a1e35', padding: '16px 24px',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        borderBottom: '1px solid #2a2d42', flexWrap: 'wrap', gap: 10 }}>
+      <header className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: '#f0a030' }}>
-            Saree Simulation Suite
-          </h1>
-          <span style={{ fontSize: 12, color: '#666' }}>
-            Layout · CAD · 3D drape — changes auto-save to your collection on exit
-          </span>
+          <h1 className="font-display text-2xl font-extrabold tracking-tight text-gold sm:text-3xl">Simulation studio</h1>
+          <p className="text-xs text-muted sm:text-sm">Flat template · CAD · 3D mannequin drape. Changes auto-save to your collection on exit.</p>
         </div>
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          <button onClick={() => navigate(-1)} style={btnStyle('#2a2d40')}>
-            <FiArrowLeft size={14} /> &nbsp;Back
+        <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
+          <button type="button" onClick={() => navigate(-1)} className={`${tap} shrink-0 border border-line bg-surface text-fg`}>
+            <ArrowLeft size={16} /> Back
           </button>
-          <button onClick={() => navigate('/collections')} style={btnStyle('#6a2a3a')}>
-            <FiLogOut size={14} /> &nbsp;Exit Simulation
+          <button type="button" onClick={() => navigate('/collections')} className={`${tap} shrink-0 border border-line bg-surface text-fg`}>
+            <LogOut size={16} /> Exit
           </button>
-          <button onClick={exportBMP}
-            style={btnStyle('#2a5080')}>
-            <FiDownload size={14} /> &nbsp;Export BMP
+          <button type="button" onClick={exportBMP} className={`${tap} shrink-0 border border-line bg-surface text-fg`}>
+            <Download size={16} /> BMP
           </button>
-          <button onClick={exportPrint}
-            style={btnStyle('#3a5040')}>
-            <FiPrinter size={14} /> &nbsp;Print / PDF
+          <button type="button" onClick={exportPrint} className={`${tap} shrink-0 border border-line bg-surface text-fg`}>
+            <Printer size={16} /> PDF
           </button>
-          <button onClick={handleNextStep} disabled={generating}
-            style={{ ...btnStyle('linear-gradient(135deg, #00D4FF, #0097A7)'), fontWeight: 700 }}>
-            Next Step &nbsp;<FiArrowRight size={14} />
+          <button type="button" onClick={handleNextStep} disabled={generating}
+            className={`${tap} shrink-0 bg-gradient-to-br from-[#f2d874] to-gold text-[#1d1700] shadow-[0_8px_22px_rgba(201,162,39,0.3)] disabled:opacity-60`}>
+            Next step <ArrowRight size={16} />
           </button>
         </div>
-      </div>
+      </header>
 
-      {/* Main three-column area */}
-      <div style={{ display: 'flex', gap: 0, minHeight: 700, alignItems: 'flex-start' }}>
+      <div className="grid gap-4 xl:grid-cols-[280px_minmax(0,1fr)_300px]">
 
-        {/* ── Left: Controls ── */}
-        <div style={{ width: 220, flexShrink: 0, background: '#161929',
-          padding: '16px 14px', overflowY: 'auto', maxHeight: '80vh',
-          borderRight: '1px solid #2a2d42' }}>
-          <SectionTitle>DIMENSIONS</SectionTitle>
-          <NumInput label="EPI (Ends Per Inch)" unit="ends/in"
-            value={p.epi} onChange={setParam('epi')} min={1} />
-          <NumInput label="PPI (Picks Per Inch)" unit="picks/in"
-            value={p.ppi} onChange={setParam('ppi')} min={1} />
-          <NumInput label="Left Border Width"  unit="inches"
-            value={p.leftBorderIn}  onChange={setParam('leftBorderIn')}  step={0.5} />
-          <NumInput label="Right Border Width" unit="inches"
-            value={p.rightBorderIn} onChange={setParam('rightBorderIn')} step={0.5} />
-          <NumInput label="Body Width" unit="inches"
-            value={p.bodyWidthIn} onChange={setParam('bodyWidthIn')} step={0.5} />
-          <div style={{ color: '#555', fontSize: 11, marginBottom: 12 }}>
-            Total width: {(p.leftBorderIn + p.bodyWidthIn + p.rightBorderIn).toFixed(1)}"
-          </div>
-
-          <SectionTitle>LENGTH (TRUE SCALE)</SectionTitle>
-          <NumInput label="Saree Length" unit="inches"
-            value={p.sareeLenIn} onChange={setParam('sareeLenIn')} min={60} step={1} />
-          <NumInput label="Blouse Piece" unit="inches"
-            value={p.blousePieceIn} onChange={setParam('blousePieceIn')} step={1} />
-          <div style={{ color: '#555', fontSize: 11, marginBottom: 12 }}>
-            Total: {(p.sareeLenIn + p.blousePieceIn).toFixed(0)}" ≈ {((p.sareeLenIn + p.blousePieceIn) * 0.0254).toFixed(2)} m
-          </div>
-
-          <SectionTitle>PALLU &amp; BLEND</SectionTitle>
-          <NumInput label="Pallu Length" unit="inches"
-            value={p.palluLenIn} onChange={setParam('palluLenIn')} step={0.5} />
-          <NumInput label="Blend Band"   unit="inches"
-            value={p.blendIn}    onChange={setParam('blendIn')}    step={0.5} />
-
-          <SectionTitle>MOTIF REPEAT</SectionTitle>
-          <NumInput label="Repeats Across Body" unit="count"
-            value={p.motifRepsAcross} onChange={setParam('motifRepsAcross')} min={1} />
-          <NumInput label="Repeat Along (Motif Height)" unit="inches"
-            value={p.motifAlong} onChange={setParam('motifAlong')} step={0.5} />
-
-          <SectionTitle>JACQUARD HOOKS</SectionTitle>
-          <NumInput label="Hooks per Border" unit="hooks"
-            value={p.borderHooks} onChange={setParam('borderHooks')} min={1} />
-          <NumInput label="Hooks for Body"   unit="hooks"
-            value={p.bodyHooks}   onChange={setParam('bodyHooks')}   min={1} />
-
-          <button onClick={() => setP({ ...DEF })}
-            style={{ ...btnStyle('#2a2d40'), width: '100%', marginTop: 8, justifyContent: 'center' }}>
-            <FiRefreshCw size={12} /> &nbsp;Reset defaults
-          </button>
-        </div>
-
-        {/* ── Center: Canvas ── */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column',
-          alignItems: 'center', padding: '20px 16px', gap: 12 }}>
-          <div style={{ display: 'flex', gap: 6 }}>
-            {VIEWS.map(v => (
-              <button key={v.key} onClick={() => setView(v.key)}
-                style={{ ...btnStyle(v.key === view ? '#f0a030' : '#2a2d40'),
-                  color: v.key === view ? '#000' : '#ccc' }}>
-                {v.label}
-              </button>
-            ))}
-          </div>
-
-          {view === 'cad' && <CadViewer params={p} specs={specs} />}
-
-          {view === '3d' && (
-            <Suspense fallback={<div style={{ color: '#666', padding: 40 }}>Loading 3D viewer…</div>}>
-              <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 8 }}>
-                <span style={{ color: '#666', fontSize: 12 }}>Drape style</span>
-                {DRAPE_STYLES.map(d => (
-                  <button key={d.key} onClick={() => setDrapeStyle(d.key)}
-                    style={{ ...btnStyle(d.key === drapeStyle ? '#f0a030' : '#2a2d40'),
-                      padding: '3px 10px', fontSize: 11, color: d.key === drapeStyle ? '#000' : '#aaa' }}>
-                    {d.label}
-                  </button>
-                ))}
-              </div>
-              <DrapeViewer3D imgs={imgs} params={p} drapeStyle={drapeStyle} />
-            </Suspense>
-          )}
-
-          {/* Layout canvas stays mounted: it feeds yarn colours and the auto-save thumbnail */}
-          <div style={{ display: view === 'layout' ? 'flex' : 'none', flexDirection: 'column',
-            alignItems: 'center', gap: 12 }}>
-          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-            <span style={{ color: '#666', fontSize: 12 }}>Preview zoom</span>
-            {[0.25, 0.5, 0.75, 1].map(z => (
-              <button key={z} onClick={() => setZoom(z)}
-                style={{ ...btnStyle(z === zoom ? '#f0a030' : '#2a2d40'),
-                  padding: '3px 10px', fontSize: 11, color: z === zoom ? '#000' : '#aaa' }}>
-                {Math.round(z * 100)}%
-              </button>
-            ))}
-          </div>
-
-          <div style={{ overflow: 'auto', maxHeight: '72vh',
-            border: '1px solid #2a2d42', borderRadius: 8 }}>
-            <SimulationCanvas canvasRef={canvasRef} params={p} imgs={imgs} zoom={zoom} onDraw={handleDraw} />
-          </div>
-
-          {/* Dimensions legend */}
-          <div style={{ display: 'flex', gap: 16, fontSize: 11, color: '#666' }}>
-            <span>◀ {p.leftBorderIn}" border</span>
-            <span>▐ {p.bodyWidthIn}" body ▐</span>
-            <span>border {p.rightBorderIn}" ▶</span>
-          </div>
-          </div>
-        </div>
-
-        {/* ── Right: Motif uploads ── */}
-        <div style={{ width: 240, flexShrink: 0, background: '#161929',
-          padding: '16px 14px', overflowY: 'auto', maxHeight: '80vh',
-          borderLeft: '1px solid #2a2d42' }}>
-          <ColorPickerOverlay imgs={imgs} onChange={patchImg} />
-          <SectionTitle>DESIGN ELEMENTS</SectionTitle>
-          <MotifUploader label="Border Image" slot={imgs.border}
-            onChange={v => setImg('border', v)} />
-          <MotifUploader label="Body Motif"   slot={imgs.body}
-            onChange={v => setImg('body', v)} />
-          <MotifUploader label="Pallu Image"  slot={imgs.pallu}
-            onChange={v => setImg('pallu', v)} />
-        </div>
-      </div>
-
-      {/* ── Stats row ── */}
-      <div style={{ padding: '20px 24px 0' }}>
-        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
-          <StatCard title="WARP ENDS" rows={[
-            ['Left border',  specs.warpEnds.leftBorder],
-            ['Body',         specs.warpEnds.body],
-            ['Right border', specs.warpEnds.rightBorder],
-            ['Total',        specs.warpEnds.total],
-          ]} />
-          <StatCard title="JACQUARD HOOKS" rows={[
-            ['Each border',     specs.hooks.perBorder],
-            ['Body',            specs.hooks.body],
-            ['Per body repeat', specs.hooks.perBodyRepeat],
-            ['Total',           specs.hooks.total],
-          ]} />
-          <StatCard title="PICKS" rows={[
-            ['Pallu',       specs.picks.pallu],
-            ['Blend band',  specs.picks.blendBand],
-            ['Motif row',   specs.picks.motifRow],
-            ['Body repeat', specs.picks.bodyRepeat],
-          ]} />
-          <StatCard title="REPEAT" rows={[
-            ['Across',          `${specs.repeat.across}"`],
-            ['Along',           `${specs.repeat.along}"`],
-            ['Border repeats',  specs.repeat.borderRepeats],
-            ['Border stretch',  `${specs.repeat.borderStretch}×`],
-          ]} />
-        </div>
-
-        {/* Yarn colors */}
-        {yarnColors.length > 0 && (
-          <div style={{ background: '#1e2235', borderRadius: 10, padding: '14px 18px' }}>
-            <div style={{ color: '#f0a030', fontSize: 11, fontWeight: 700,
-              letterSpacing: 1, marginBottom: 10 }}>
-              YARN COLOURS IN THE LOOM FILES ({yarnColors.length})
-            </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-              {yarnColors.map(({ hex, pct }) => (
-                <div key={hex} style={{
-                  display: 'flex', alignItems: 'center', gap: 5,
-                  background: '#252840', borderRadius: 20, padding: '3px 10px 3px 4px',
-                }}>
-                  <div style={{
-                    width: 18, height: 18, borderRadius: '50%',
-                    background: hex, border: '1.5px solid #333', flexShrink: 0,
-                  }} />
-                  <span style={{ color: '#ccc', fontSize: 11 }}>{hex} · {pct}%</span>
-                </div>
+        {/* ── Viewport ── (first on mobile, centre on desktop) */}
+        <main className="order-first min-w-0 space-y-3 xl:order-none">
+          <div className={`${panel} p-2`}>
+            <div role="tablist" className="grid grid-cols-3 gap-1.5">
+              {VIEWS.map(v => (
+                <button key={v.key} type="button" role="tab" aria-selected={v.key === view}
+                  onClick={() => { haptic(); setView(v.key); }}
+                  className={`sf-tap min-h-11 rounded-xl px-2 text-[13px] font-semibold sm:text-sm ${v.key === view ? 'bg-gold text-[#1d1700] shadow' : 'text-muted'}`}>
+                  {v.label}
+                </button>
               ))}
             </div>
           </div>
-        )}
+
+          <div className={`${panel} relative p-2 sm:p-3`}>
+            {view === 'cad' && <div className="overflow-auto"><CadViewer params={p} specs={specs} /></div>}
+
+            {view === '3d' && (
+              <Suspense fallback={<div className="grid h-64 place-items-center text-muted">Loading 3D viewer…</div>}>
+                <div className="mb-2 flex flex-wrap items-center gap-2">
+                  <span className="text-xs text-muted">Drape style</span>
+                  {DRAPE_STYLES.map(d => (
+                    <button key={d.key} type="button" onClick={() => setDrapeStyle(d.key)}
+                      className={`sf-tap min-h-11 rounded-xl px-3 text-xs font-semibold ${d.key === drapeStyle ? 'bg-gold text-[#1d1700]' : 'bg-surface-2 text-muted'}`}>
+                      {d.label}
+                    </button>
+                  ))}
+                </div>
+                <div className="overflow-hidden rounded-xl"><DrapeViewer3D imgs={imgs} params={p} drapeStyle={drapeStyle} /></div>
+              </Suspense>
+            )}
+
+            {/* The layout canvas stays mounted: it feeds yarn colours and the auto-save thumbnail */}
+            <div className={view === 'layout' ? 'block' : 'hidden'}>
+              <div ref={viewportRef}
+                className="max-h-[62vh] touch-pan-x touch-pan-y overflow-auto rounded-xl border border-line bg-black/10 xl:max-h-[72vh]">
+                <SimulationCanvas canvasRef={canvasRef} params={p} imgs={imgs} zoom={zoom} onDraw={handleDraw} />
+              </div>
+              <p className="mt-2 text-center text-[11px] text-muted">
+                ◀ {p.leftBorderIn}" border · {p.bodyWidthIn}" body · border {p.rightBorderIn}" ▶ · pinch to zoom, drag to pan
+              </p>
+            </div>
+          </div>
+
+          {/* Floating zoom toolbar. Lives outside the blurred card: backdrop-filter would
+              otherwise become the containing block for position:fixed. */}
+          {view === 'layout' && (
+  <div role="toolbar" aria-label="Zoom"
+    className="fixed bottom-[calc(80px+env(safe-area-inset-bottom))] left-1/2 z-[145] flex -translate-x-1/2 items-center gap-1 rounded-2xl border border-line bg-glass p-1.5 shadow-2xl backdrop-blur-xl lg:sticky lg:bottom-3 lg:left-auto lg:mx-auto lg:w-fit lg:translate-x-0 lg:shadow-lg">
+    {[['75%', () => setZoom(0.75), presetActive(0.75)], ['100%', () => setZoom(1), presetActive(1)], ['Fit', fitToView, false]].map(([label, fn, on]) => (
+      <button key={label} type="button" onClick={() => { haptic(); fn(); }}
+        className={`sf-tap min-h-11 min-w-14 rounded-xl px-3 text-sm font-bold ${on ? 'bg-gold text-[#1d1700]' : 'text-fg'}`}>
+        {label}
+      </button>
+    ))}
+    <span className="min-w-12 px-1 text-center text-xs tabular-nums text-muted">{zoomPct}%</span>
+  </div>
+          )}
+
+          {/* Stats */}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 2xl:grid-cols-4">
+            <StatCard title="Warp ends" rows={[
+              ['Left border', specs.warpEnds.leftBorder], ['Body', specs.warpEnds.body],
+              ['Right border', specs.warpEnds.rightBorder], ['Total', specs.warpEnds.total]]} />
+            <StatCard title="Jacquard hooks" rows={[
+              ['Each border', specs.hooks.perBorder], ['Body', specs.hooks.body],
+              ['Per body repeat', specs.hooks.perBodyRepeat], ['Total', specs.hooks.total]]} />
+            <StatCard title="Picks" rows={[
+              ['Pallu', specs.picks.pallu], ['Blend band', specs.picks.blendBand],
+              ['Motif row', specs.picks.motifRow], ['Body repeat', specs.picks.bodyRepeat]]} />
+            <StatCard title="Repeat" rows={[
+              ['Across', `${specs.repeat.across}"`], ['Along', `${specs.repeat.along}"`],
+              ['Border repeats', specs.repeat.borderRepeats], ['Border stretch', `${specs.repeat.borderStretch}×`]]} />
+          </div>
+
+          {yarnColors.length > 0 && (
+            <div className={`${panel} p-4`}>
+              <div className="mb-2 text-[11px] font-bold uppercase tracking-widest text-gold">
+                Yarn colours in the loom files ({yarnColors.length})
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {yarnColors.map(({ hex, pct }) => (
+                  <span key={hex} className="inline-flex items-center gap-2 rounded-full bg-surface-2 py-1 pl-1 pr-3 text-xs text-fg">
+                    <span className="h-5 w-5 rounded-full border border-line" style={{ background: hex }} />
+                    {hex} · {pct}%
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </main>
+
+        {/* ── Loom parameters ── */}
+        <div className="min-w-0 xl:order-first">
+          <Accordion title="Loom parameters">
+            <SectionTitle>Dimensions</SectionTitle>
+            <NumInput label="EPI (ends per inch)" unit="ends/in" value={p.epi} onChange={setParam('epi')} min={1} />
+            <NumInput label="PPI (picks per inch)" unit="picks/in" value={p.ppi} onChange={setParam('ppi')} min={1} />
+            <NumInput label="Left border width" unit="inches" value={p.leftBorderIn} onChange={setParam('leftBorderIn')} step={0.5} />
+            <NumInput label="Right border width" unit="inches" value={p.rightBorderIn} onChange={setParam('rightBorderIn')} step={0.5} />
+            <NumInput label="Body width" unit="inches" value={p.bodyWidthIn} onChange={setParam('bodyWidthIn')} step={0.5} />
+            <p className="mb-3 text-xs text-muted">Total width: {(p.leftBorderIn + p.bodyWidthIn + p.rightBorderIn).toFixed(1)}"</p>
+
+            <SectionTitle>Length (true scale)</SectionTitle>
+            <NumInput label="Saree length" unit="inches" value={p.sareeLenIn} onChange={setParam('sareeLenIn')} min={60} />
+            <NumInput label="Blouse piece" unit="inches" value={p.blousePieceIn} onChange={setParam('blousePieceIn')} />
+            <p className="mb-3 text-xs text-muted">
+              Total: {(p.sareeLenIn + p.blousePieceIn).toFixed(0)}" ≈ {((p.sareeLenIn + p.blousePieceIn) * 0.0254).toFixed(2)} m
+            </p>
+
+            <SectionTitle>Pallu &amp; blend</SectionTitle>
+            <NumInput label="Pallu length" unit="inches" value={p.palluLenIn} onChange={setParam('palluLenIn')} step={0.5} />
+            <NumInput label="Blend band" unit="inches" value={p.blendIn} onChange={setParam('blendIn')} step={0.5} />
+
+            <SectionTitle>Motif repeat</SectionTitle>
+            <NumInput label="Repeats across body" unit="count" value={p.motifRepsAcross} onChange={setParam('motifRepsAcross')} min={1} />
+            <NumInput label="Repeat along (motif height)" unit="inches" value={p.motifAlong} onChange={setParam('motifAlong')} step={0.5} />
+
+            <SectionTitle>Jacquard hooks</SectionTitle>
+            <NumInput label="Hooks per border" unit="hooks" value={p.borderHooks} onChange={setParam('borderHooks')} min={1} />
+            <NumInput label="Hooks for body" unit="hooks" value={p.bodyHooks} onChange={setParam('bodyHooks')} min={1} />
+
+            <button type="button" onClick={() => setP({ ...DEF })}
+              className={`${tap} mt-2 w-full border border-line bg-surface text-fg`}>
+              <RefreshCw size={14} /> Reset defaults
+            </button>
+          </Accordion>
+        </div>
+
+        {/* ── Design elements ── */}
+        <div className="min-w-0">
+          <Accordion title="Design elements" defaultOpen>
+            <div className="mb-3"><ColorPickerOverlay imgs={imgs} onChange={patchImg} /></div>
+            <MotifUploader label="Border image" slot={imgs.border} onChange={v => setImg('border', v)} />
+            <MotifUploader label="Body motif" slot={imgs.body} onChange={v => setImg('body', v)} />
+            <MotifUploader label="Pallu image" slot={imgs.pallu} onChange={v => setImg('pallu', v)} />
+          </Accordion>
+        </div>
       </div>
     </div>
   );
-}
-
-// ─── Tiny helpers ─────────────────────────────────────────────────────────────
-function SectionTitle({ children }) {
-  return (
-    <div style={{ color: '#f0a030', fontSize: 10, fontWeight: 700,
-      letterSpacing: 1, marginBottom: 8, marginTop: 12 }}>{children}</div>
-  );
-}
-
-function btnStyle(bg) {
-  return {
-    display: 'inline-flex', alignItems: 'center',
-    background: bg, color: '#fff', border: 'none', borderRadius: 8,
-    padding: '7px 14px', cursor: 'pointer', fontSize: 13, fontWeight: 500,
-  };
 }

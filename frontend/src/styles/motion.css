@@ -1,0 +1,208 @@
+/* ============================================
+   SareeFusion — Motion layer
+   Shared easing, micro-interactions, skeletons, loom loader
+   ============================================ */
+
+:root {
+  --gold: #c9a227;
+  --gold-soft: rgba(201, 162, 39, 0.35);
+  --gold-glow: 0 0 0 3px rgba(201, 162, 39, 0.28), 0 0 18px rgba(201, 162, 39, 0.35);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* No will-change/transform here: a transformed ancestor becomes the containing
+   block for position:fixed descendants (floating toolbars, sticky action bars). */
+.page-transition {
+  min-height: 100%;
+}
+
+/* ---- Buttons: smooth scale + press feedback ---- */
+button,
+.empty-cta,
+.batch-view-btn,
+.rp-btn {
+  transition: transform 0.2s var(--ease-out), box-shadow 0.25s var(--ease-out),
+    background-color 0.2s, border-color 0.2s, color 0.2s, opacity 0.2s;
+}
+
+.cd-action:not(:disabled):hover,
+.cd-primary:not(:disabled):hover,
+.cg-chip:hover,
+.empty-cta:hover,
+.batch-view-btn:hover {
+  transform: translateY(-1px) scale(1.03);
+}
+
+.cd-action:not(:disabled):active,
+.cd-primary:not(:disabled):active,
+.cg-chip:active,
+.empty-cta:active,
+.batch-view-btn:active {
+  transform: scale(0.97);
+}
+
+/* ---- Gold focus glow ---- */
+:focus-visible {
+  outline: none;
+  box-shadow: var(--gold-glow);
+  border-radius: inherit;
+}
+
+input:focus-visible,
+select:focus-visible {
+  border-color: var(--gold);
+}
+
+/* ---- Existing cards: elevation on hover ---- */
+.category-card,
+.latest-saree-card,
+.saree-card,
+.sarees-section-card,
+.batch-card {
+  transition: transform 0.3s var(--ease-out), box-shadow 0.3s var(--ease-out), border-color 0.3s;
+}
+
+.category-card:hover,
+.latest-saree-card:hover,
+.saree-card:hover,
+.sarees-section-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg), 0 0 0 1px var(--gold-soft);
+}
+
+/* Staggered entrance for the dashboard grids (CSS-only, first 12 items) */
+.category-grid > *,
+.latest-saree-grid > * {
+  animation: riseIn 0.55s var(--ease-out) both;
+}
+
+.category-grid > :nth-child(1), .latest-saree-grid > :nth-child(1) { animation-delay: 0.04s; }
+.category-grid > :nth-child(2), .latest-saree-grid > :nth-child(2) { animation-delay: 0.10s; }
+.category-grid > :nth-child(3), .latest-saree-grid > :nth-child(3) { animation-delay: 0.16s; }
+.category-grid > :nth-child(4), .latest-saree-grid > :nth-child(4) { animation-delay: 0.22s; }
+.category-grid > :nth-child(5), .latest-saree-grid > :nth-child(5) { animation-delay: 0.28s; }
+.category-grid > :nth-child(6), .latest-saree-grid > :nth-child(6) { animation-delay: 0.34s; }
+.category-grid > :nth-child(n+7), .latest-saree-grid > :nth-child(n+7) { animation-delay: 0.40s; }
+
+@keyframes riseIn {
+  from { opacity: 0; transform: translateY(22px) scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ---- 3D tilt card ---- */
+.tilt-card {
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+/* ---- Skeleton shimmer ---- */
+.shimmer {
+  position: relative;
+  overflow: hidden;
+  background: var(--gray-8);
+}
+
+.shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(100deg, transparent 20%, rgba(201, 162, 39, 0.18) 50%, transparent 80%);
+  animation: shimmerSweep 1.4s infinite;
+}
+
+@keyframes shimmerSweep {
+  to { transform: translateX(100%); }
+}
+
+/* ---- Weaving shuttle loader ---- */
+.shuttle-loader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 28px 12px;
+}
+
+.shuttle-loom {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  width: min(240px, 80%);
+  height: 46px;
+}
+
+.shuttle-warp {
+  width: 2px;
+  height: 100%;
+  background: linear-gradient(var(--gray-6), var(--gray-7));
+  animation: warpPulse 1.6s ease-in-out infinite;
+  animation-delay: calc(var(--i) * 0.07s);
+}
+
+.shuttle-weft {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  height: 3px;
+  width: 100%;
+  margin-top: -1.5px;
+  background: repeating-linear-gradient(90deg, var(--gold) 0 10px, transparent 10px 14px);
+  opacity: 0.55;
+}
+
+.shuttle {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 38px;
+  height: 14px;
+  margin-top: -7px;
+  border-radius: 14px 14px 14px 14px / 50%;
+  background: linear-gradient(135deg, #e7c75a, var(--gold) 55%, #8a6b12);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25);
+  animation: shuttleGlide 1.5s var(--ease-out) infinite alternate;
+}
+
+.shuttle::before,
+.shuttle::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  margin-top: -3.5px;
+  background: inherit;
+  clip-path: polygon(0 50%, 100% 0, 100% 100%);
+}
+
+.shuttle::before { left: -5px; }
+.shuttle::after { right: -5px; transform: scaleX(-1); }
+
+.shuttle-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--gray-3);
+}
+
+@keyframes shuttleGlide {
+  from { left: 0; }
+  to { left: calc(100% - 38px); }
+}
+
+@keyframes warpPulse {
+  0%, 100% { transform: scaleY(1); opacity: 0.7; }
+  50% { transform: scaleY(0.9); opacity: 1; }
+}
+
+/* ---- Respect reduced motion ---- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

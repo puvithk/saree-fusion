@@ -1,0 +1,125 @@
+/* ============================================
+   Theme tokens. Light is the default :root set in App.css;
+   [data-theme="dark"] remaps those same variables, so the
+   existing pages follow the theme without per-rule edits.
+   ============================================ */
+
+:root {
+  --sf-bg: #f7f5ef;
+  --sf-surface: #ffffff;
+  --sf-surface-2: #f2efe6;
+  --sf-glass: rgba(255, 255, 255, 0.72);
+  --sf-border: #e3e0d6;
+  --sf-text: #14142b;
+  --sf-muted: #5b5f7a;
+  --sf-gold: #a8820f;
+  --sf-accent: #0097a7;
+  color-scheme: light;
+}
+
+[data-theme='dark'] {
+  --sf-bg: #0a0c24;
+  --sf-surface: #12153a;
+  --sf-surface-2: #1a1e4a;
+  --sf-glass: rgba(24, 28, 70, 0.55);
+  --sf-border: rgba(255, 255, 255, 0.11);
+  --sf-text: #f2f0ea;
+  --sf-muted: #a3a8cf;
+  --sf-gold: #e3bb4f;
+  --sf-accent: #35dcff;
+  color-scheme: dark;
+
+  /* remap the legacy tokens used throughout App.css */
+  --white: #12153a;
+  --dark: #f2f0ea;
+  --dark-2: #d9d7e8;
+  --gray-1: #e6e7f3;
+  --gray-2: #c6c9e2;
+  --gray-3: #a9aed0;
+  --gray-4: #8a90b8;
+  --gray-5: #5f6592;
+  --gray-6: #3a3f6b;
+  --gray-7: rgba(255, 255, 255, 0.11);
+  --gray-8: #1a1e4a;
+  --cyan-light: rgba(0, 212, 255, 0.13);
+  --cyan-bg: #0e1130;
+  --green-light: rgba(76, 175, 80, 0.16);
+  --amber-light: rgba(255, 193, 7, 0.14);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.45);
+  --shadow-xl: 0 12px 48px rgba(0, 0, 0, 0.5);
+}
+
+body {
+  background: var(--sf-bg);
+  color: var(--sf-text);
+  transition: background-color 0.3s, color 0.3s;
+}
+
+[data-theme='dark'] body {
+  background:
+    radial-gradient(900px 500px at 90% -10%, rgba(99, 102, 241, 0.18), transparent 60%),
+    radial-gradient(700px 420px at -10% 40%, rgba(201, 162, 39, 0.08), transparent 60%),
+    var(--sf-bg);
+  background-attachment: fixed;
+}
+
+/* ---- Dark fixes for rules that hard-code light colours ---- */
+[data-theme='dark'] .navbar { background: rgba(12, 14, 40, 0.82); }
+[data-theme='dark'] .hp { --hp-cream: #0e1130; --hp-ink: #f2f0ea; }
+[data-theme='dark'] .hp-hero {
+  background:
+    radial-gradient(900px 480px at 85% 10%, rgba(0, 212, 255, 0.14), transparent 60%),
+    radial-gradient(700px 420px at 0% 100%, rgba(201, 162, 39, 0.14), transparent 60%),
+    #0a0c24;
+}
+[data-theme='dark'] .hp-strip { background: #060818; }
+[data-theme='dark'] .hp-eyebrow,
+[data-theme='dark'] .hp-btn-ghost,
+[data-theme='dark'] .hp-float { background: rgba(24, 28, 70, 0.7); color: var(--sf-text); }
+[data-theme='dark'] .hp-step,
+[data-theme='dark'] .hp-product,
+[data-theme='dark'] .hp-feature { background: var(--sf-glass); backdrop-filter: blur(12px); }
+[data-theme='dark'] .status-compiled,
+[data-theme='dark'] .cd-clear,
+[data-theme='dark'] .zv-toolbar button.is-active { background: rgba(227, 187, 79, 0.16); color: var(--sf-gold); }
+[data-theme='dark'] .zv-stage,
+[data-theme='dark'] .cg-media { background: radial-gradient(circle at 50% 40%, #1c2050, #0d1030 70%); }
+[data-theme='dark'] .cg-chip.is-active { color: #1a1500; }
+
+/* ---- Touch ergonomics: 44px minimum targets on touch devices ---- */
+@media (pointer: coarse) {
+  .action-btn,
+  .zv-toolbar button,
+  .cg-chip,
+  .cg-search button,
+  .cd-seg button,
+  .cd-tabs button,
+  .hp-btn,
+  .nav-link,
+  .mobile-link,
+  .cd-action,
+  .cd-swatch,
+  .filter-tab,
+  select,
+  .sf-tap {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Haptic-style pressed state for anything tappable */
+.sf-tap {
+  transition: transform 0.15s var(--ease-out, ease), background-color 0.2s, box-shadow 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+.sf-tap:active { transform: scale(0.95); }
+
+/* Page content clears the mobile bottom nav */
+@media (max-width: 900px) {
+  .main-content { padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
+}
+
+/* Never allow sideways scroll */
+html, body { max-width: 100%; overflow-x: clip; }

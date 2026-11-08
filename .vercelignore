@@ -1,0 +1,8 @@
+# Keep local-only folders out of the upload (the Python venv alone is ~250 MB)
+backend/venv
+backend/__pycache__
+backend/test_out
+backend/test_drape.py
+backend/test_mask.py
+**/node_modules
+frontend/dist

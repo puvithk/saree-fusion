@@ -1,8 +1,11 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Home from './pages/Home';
 import Collections from './pages/Collections';
+import CollectionDetail from './pages/CollectionDetail';
+import CollectionFolder from './pages/CollectionFolder';
+import AnimatedRoutes from './components/motion/AnimatedRoutes';
 import FusionResult from './pages/FusionResult';
 import DesignDetails from './pages/DesignDetails';
 import Sarees from './pages/Sarees';
@@ -10,44 +13,39 @@ import Design from './pages/Design';
 import WeaverDashboard from './pages/WeaverDashboard';
 import Simulation from './pages/Simulation';
 import ResultPage from './pages/ResultPage';
-import Login from './pages/Login';
-import Signup from './pages/Signup';
-import ProtectedRoute from './components/ProtectedRoute';
-import { AuthProvider } from './context/AuthContext.jsx';
 import { SareeDesignProvider } from './context/SareeDesignContext.jsx';
 import './App.css';
 
 function App() {
   return (
     <Router>
-      <AuthProvider>
       <SareeDesignProvider>
         <div className="app">
           <Navbar />
           <main className="main-content">
-            <Routes>
-              {/* Public auth routes */}
-              <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<Signup />} />
+            <AnimatedRoutes>
+              {/* There is no login: old /login and /signup links go to the home page */}
+              <Route path="/login" element={<Navigate to="/" replace />} />
+              <Route path="/signup" element={<Navigate to="/" replace />} />
 
-              {/* Protected routes */}
-              <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
-              <Route path="/collections" element={<ProtectedRoute><Collections /></ProtectedRoute>} />
-              <Route path="/collections/batch/:batchId" element={<ProtectedRoute><FusionResult /></ProtectedRoute>} />
-              <Route path="/collections/batch/:batchId/design/:designId" element={<ProtectedRoute><DesignDetails /></ProtectedRoute>} />
-              <Route path="/sarees" element={<ProtectedRoute><Sarees /></ProtectedRoute>} />
-              <Route path="/design" element={<ProtectedRoute><Design /></ProtectedRoute>} />
-              <Route path="/weaver" element={<ProtectedRoute><WeaverDashboard /></ProtectedRoute>} />
-              <Route path="/simulation" element={<ProtectedRoute><Simulation /></ProtectedRoute>} />
-              <Route path="/result/:batchId" element={<ProtectedRoute><ResultPage /></ProtectedRoute>} />
+              <Route path="/" element={<Home />} />
+              <Route path="/collections" element={<Collections />} />
+              <Route path="/collections/folder/:folderId" element={<CollectionFolder />} />
+              <Route path="/collections/:itemId" element={<CollectionDetail />} />
+              <Route path="/collections/batch/:batchId" element={<FusionResult />} />
+              <Route path="/collections/batch/:batchId/design/:designId" element={<DesignDetails />} />
+              <Route path="/sarees" element={<Sarees />} />
+              <Route path="/design" element={<Design />} />
+              <Route path="/weaver" element={<WeaverDashboard />} />
+              <Route path="/simulation" element={<Simulation />} />
+              <Route path="/result/:batchId" element={<ResultPage />} />
               <Route path="/layout-creator" element={<Navigate to="/simulation" replace />} />
               <Route path="/layout" element={<Navigate to="/simulation" replace />} />
-            </Routes>
+            </AnimatedRoutes>
           </main>
           <Footer />
         </div>
       </SareeDesignProvider>
-      </AuthProvider>
     </Router>
   );
 }

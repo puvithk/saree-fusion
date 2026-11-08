@@ -1,0 +1,89 @@
+/* Everything is scoped under .admin-root so nothing leaks into the weaver app. */
+.admin-root{position:fixed;inset:0;overflow:auto;z-index:1000;color:#e8eaf6;font-family:Inter,system-ui,sans-serif;
+  background:radial-gradient(1200px 600px at 10% -10%,#2a2160 0%,transparent 60%),radial-gradient(900px 500px at 100% 0%,#0f3b4a 0%,transparent 55%),#0a0b14}
+.admin-root *{box-sizing:border-box}
+.admin-root .ad-glass{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-radius:16px}
+.admin-root .ad-muted{color:#8a90a8}.admin-root .small{font-size:.78rem}.admin-root .cap{text-transform:capitalize;margin-top:.6rem}
+.admin-root .ad-center{display:grid;place-items:center;min-height:100vh}
+.admin-root .ad-brand{font-weight:700;letter-spacing:.02em;font-size:1.1rem}.admin-root .ad-brand span{color:#8b7bff}.admin-root .ad-brand.big{font-size:1.5rem}
+.admin-root .ad-btn{background:rgba(255,255,255,.07);color:inherit;border:1px solid rgba(255,255,255,.14);border-radius:10px;padding:.5rem .85rem;cursor:pointer;font:inherit;font-size:.85rem}
+.admin-root .ad-btn:hover{background:rgba(255,255,255,.13)}.admin-root .ad-btn:disabled{opacity:.5;cursor:not-allowed}
+.admin-root .ad-btn.primary{background:linear-gradient(135deg,#7c6bff,#5b8cff);border:0;font-weight:600}
+.admin-root .ad-btn.danger{color:#ff8a8a;border-color:rgba(255,120,120,.35)}
+.admin-root .ad-error{background:rgba(255,90,90,.12);border:1px solid rgba(255,90,90,.35);color:#ffb0b0;padding:.6rem .8rem;border-radius:10px;margin:.6rem 0;font-size:.88rem}
+/* login */
+.admin-root .ad-login{min-height:100vh;display:grid;place-items:center;padding:1rem}
+.admin-root .ad-login-card{width:100%;max-width:380px;padding:2rem;display:grid;gap:1rem}
+.admin-root label{display:grid;gap:.35rem;font-size:.82rem;color:#aab0c8}
+.admin-root input{background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.14);border-radius:10px;padding:.65rem .8rem;color:#fff;font:inherit;outline:none}
+.admin-root input:focus{border-color:#8b7bff}
+/* shell */
+.admin-root .ad-shell{display:flex;min-height:100%}
+.admin-root .ad-side{width:240px;flex:none;margin:12px;padding:1.1rem;display:flex;flex-direction:column;gap:1.2rem;position:sticky;top:12px;height:calc(100vh - 24px)}
+.admin-root .ad-side nav{display:grid;gap:.3rem}
+.admin-root .ad-nav{display:flex;gap:.6rem;align-items:center;padding:.6rem .75rem;border-radius:10px;color:#b9bfd8;text-decoration:none;font-size:.92rem}
+.admin-root .ad-nav i{font-style:normal;opacity:.8}.admin-root .ad-nav:hover{background:rgba(255,255,255,.07)}
+.admin-root .ad-nav.active{background:rgba(139,123,255,.18);color:#fff}
+.admin-root .ad-side-foot{margin-top:auto;display:grid;gap:.5rem}
+.admin-root .ad-main{flex:1;min-width:0;padding:12px 12px 24px 0}
+.admin-root .ad-top{display:none;align-items:center;gap:.8rem;padding:.6rem .8rem;margin-bottom:12px}
+.admin-root .ad-content{display:grid;gap:14px}
+.admin-root .ad-h1{font-size:1.5rem;margin:.2rem 0}
+.admin-root .ad-scrim{display:none}
+/* cards / panels */
+.admin-root .ad-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px}
+.admin-root .ad-card{padding:1rem}.admin-root .ad-num{font-size:1.8rem;font-weight:700;margin-top:.3rem}
+.admin-root .ad-panel{padding:1.1rem}.admin-root .ad-panel h2{margin:0 0 .6rem;font-size:1.05rem}
+.admin-root .ad-panel-h{display:flex;justify-content:space-between;align-items:center;gap:1rem}
+.admin-root .ad-legend{display:flex;gap:1rem;font-size:.8rem;color:#aab0c8}.admin-root .ad-legend b{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:.35rem}
+.admin-root .ad-chart{width:100%;height:auto}
+.admin-root .ad-feed{list-style:none;margin:0;padding:0;display:grid;gap:.1rem}
+.admin-root .ad-feed li{display:flex;gap:.8rem;align-items:center;padding:.5rem 0;border-bottom:1px solid rgba(255,255,255,.06);flex-wrap:wrap}
+.admin-root .ad-pill{display:inline-block;font-size:.72rem;padding:.15rem .55rem;border-radius:99px;background:rgba(255,255,255,.1);font-style:normal;text-transform:capitalize}
+.admin-root .ad-pill.active,.admin-root .ad-pill.batch{background:rgba(52,211,182,.18);color:#6ee7d0}
+.admin-root .ad-pill.suspended{background:rgba(255,90,90,.18);color:#ff9d9d}.admin-root .ad-pill.order{background:rgba(245,184,75,.18);color:#f5c86e}
+/* users table */
+.admin-root .ad-search{width:100%;max-width:380px}
+.admin-root .ad-table{display:grid;border:1px solid rgba(255,255,255,.1);border-radius:16px;overflow:hidden;background:rgba(255,255,255,.04)}
+.admin-root .ad-tr{display:grid;grid-template-columns:2.4fr .9fr .7fr .7fr .9fr .9fr 1.5fr;gap:.6rem;align-items:center;padding:.7rem 1rem;border-bottom:1px solid rgba(255,255,255,.06);font-size:.88rem}
+.admin-root .ad-tr.head{color:#8a90a8;font-size:.75rem;text-transform:uppercase;letter-spacing:.06em}
+.admin-root .ad-user{display:flex;gap:.7rem;align-items:center;min-width:0}
+.admin-root .ad-user img,.admin-root .ad-user i{width:34px;height:34px;border-radius:50%;flex:none;display:grid;place-items:center;background:#3a3470;font-style:normal;object-fit:cover}
+.admin-root .ad-user b{display:grid;min-width:0;font-weight:600}.admin-root .ad-user small{color:#8a90a8;font-weight:400;overflow:hidden;text-overflow:ellipsis}
+.admin-root .ad-actions{display:flex;gap:.4rem;justify-content:flex-end}.admin-root .ad-pad{padding:1rem}
+/* inspector */
+.admin-root .ad-modal{position:fixed;inset:0;background:rgba(5,6,14,.7);display:grid;place-items:center;padding:12px;z-index:10}
+.admin-root .ad-modal-card{width:100%;max-width:1100px;max-height:92vh;overflow:auto;padding:1.1rem;background:rgba(18,19,34,.92)}
+.admin-root .ad-insp{display:grid;grid-template-columns:230px 1fr;gap:1rem;margin-top:.8rem}
+.admin-root .ad-insp-list{display:grid;gap:.4rem;align-content:start;max-height:65vh;overflow:auto}
+.admin-root .ad-item{text-align:left;background:rgba(255,255,255,.05);border:1px solid transparent;color:inherit;border-radius:10px;padding:.55rem .7rem;cursor:pointer;display:grid;font:inherit}
+.admin-root .ad-item small{color:#8a90a8}.admin-root .ad-item.on{border-color:#8b7bff;background:rgba(139,123,255,.15)}
+.admin-root .ad-tabs{display:none;gap:.4rem;margin-bottom:.6rem}
+.admin-root .ad-tabs button{flex:1;background:rgba(255,255,255,.06);border:0;color:inherit;padding:.5rem;border-radius:10px;font:inherit}
+.admin-root .ad-tabs button.on{background:#5b4fe0}
+.admin-root .ad-split{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.admin-root .ad-split h3{margin:.2rem 0 .5rem;font-size:.95rem}
+.admin-root .ad-prompt{background:rgba(0,0,0,.25);border-radius:10px;padding:.7rem;font-size:.88rem;white-space:pre-wrap}
+.admin-root .ad-thumbs{display:flex;gap:.5rem;flex-wrap:wrap}.admin-root .ad-thumbs img{width:110px;height:110px;object-fit:cover;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:#111}
+.admin-root .ad-split section:only-child{grid-column:1/-1}
+.admin-root .ad-tr4{grid-template-columns:1.6fr 1fr 1.2fr 1.2fr}
+.admin-root .ad-tabs.ad-view{display:flex;max-width:340px;margin-top:.8rem}
+/* tablet / mobile */
+@media (max-width:1023px){
+  .admin-root .ad-split{grid-template-columns:1fr}.admin-root .ad-tabs{display:flex}
+  .admin-root .ad-split section{display:none}.admin-root .ad-split section.show{display:block}
+}
+@media (max-width:767px){
+  .admin-root .ad-cards{grid-template-columns:repeat(2,1fr);gap:8px}
+  .admin-root .ad-card{padding:.8rem}.admin-root .ad-num{font-size:1.45rem}
+  .admin-root .ad-side{position:fixed;left:0;top:0;bottom:0;height:auto;margin:0;border-radius:0 16px 16px 0;transform:translateX(-105%);transition:transform .2s;z-index:20;background:rgba(18,19,34,.97)}
+  .admin-root .ad-side.open{transform:none}
+  .admin-root .ad-scrim{display:block;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:15}
+  .admin-root .ad-main{padding:12px}.admin-root .ad-top{display:flex}
+  .admin-root .ad-tr.head{display:none}
+  .admin-root .ad-tr,.admin-root .ad-tr4{grid-template-columns:1fr 1fr;padding:.9rem}
+  .admin-root .ad-tr [data-l]::before{content:attr(data-l) ": ";color:#8a90a8;font-size:.75rem}
+  .admin-root .ad-user{grid-column:1/-1}.admin-root .ad-tr [data-l].ad-user::before{content:none}
+  .admin-root .ad-actions{grid-column:1/-1;justify-content:flex-start}
+  .admin-root .ad-insp{grid-template-columns:1fr}.admin-root .ad-insp-list{max-height:180px}
+}

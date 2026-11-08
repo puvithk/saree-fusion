@@ -1,4 +1,5 @@
-import { BrowserRouter as Router, Route, Navigate } from 'react-router-dom';
+import { lazy, Suspense } from 'react';
+import { BrowserRouter as Router, Route, Navigate, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Home from './pages/Home';
@@ -19,13 +20,16 @@ import { AuthProvider } from './context/AuthContext.jsx';
 import { SareeDesignProvider } from './context/SareeDesignContext.jsx';
 import './App.css';
 
+// Admin console is a separate, lazily loaded app; weaver pages never import it.
+const AdminApp = lazy(() => import('./admin/AdminApp.jsx'));
+
 // Everything that reads or writes a weaver's own work sits behind a session.
 // The guard is for usability; the API checks the cookie on every request itself.
 const guarded = (element) => <ProtectedRoute>{element}</ProtectedRoute>;
 
-function App() {
+function WeaverApp() {
   return (
-    <Router>
+    <>
       <AuthProvider>
         <SareeDesignProvider>
           <div className="app">
@@ -62,8 +66,28 @@ function App() {
           </div>
         </SareeDesignProvider>
       </AuthProvider>
+    </>
+  );
+}
+
+function App() {
+  return (
+    <Router>
+      <Shell />
     </Router>
   );
+}
+
+function Shell() {
+  const { pathname } = useLocation();
+  if (pathname === '/admin' || pathname.startsWith('/admin/')) {
+    return (
+      <Suspense fallback={null}>
+        <AdminApp />
+      </Suspense>
+    );
+  }
+  return <WeaverApp />;
 }
 
 export default App;

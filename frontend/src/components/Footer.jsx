@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom';
-import { FaFacebook, FaLinkedin, FaYoutube, FaInstagram } from 'react-icons/fa';
 
 export default function Footer() {
   return (
@@ -25,12 +24,6 @@ export default function Footer() {
         <div className="footer-tagline">
           <h3>Where Expectations <span className="text-cyan">Meets Excellence</span></h3>
         </div>
-      </div>
-      <div className="footer-socials">
-        <a href="#" aria-label="Facebook"><FaFacebook /></a>
-        <a href="#" aria-label="LinkedIn"><FaLinkedin /></a>
-        <a href="#" aria-label="YouTube"><FaYoutube /></a>
-        <a href="#" aria-label="Instagram"><FaInstagram /></a>
       </div>
     </footer>
   );

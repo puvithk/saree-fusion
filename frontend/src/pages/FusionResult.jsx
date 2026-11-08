@@ -3,8 +3,8 @@ import { Link, useParams } from 'react-router-dom';
 import { FiChevronLeft } from 'react-icons/fi';
 import SareeCard from '../components/SareeCard';
 import Pagination from '../components/Pagination';
-import sareesilhouette from '../assets/saree-silhouette.png';
 import { API_BASE_URL } from '../config';
+import { latestSarees } from '../data/mockData';
 
 export default function FusionResult() {
   const { batchId } = useParams();
@@ -15,6 +15,17 @@ export default function FusionResult() {
   const itemsPerPage = 4;
 
   useEffect(() => {
+    // Batch "0" is the public saree catalog (static samples), not a saved batch.
+    if (batchId === '0') {
+      setBatch({
+        id: '0',
+        name: 'Saree catalog',
+        designs: latestSarees.map((s, i) => ({ ...s, id: String(i), templateImage: s.image, engine: 'SareeFusion catalog' })),
+        uploadedComponents: { pallu: [], border: [], body: [] },
+      });
+      setLoading(false);
+      return;
+    }
     fetch(`${API_BASE_URL}/api/batches/${batchId}`)
       .then((res) => res.json())
       .then((data) => {
@@ -92,7 +103,6 @@ export default function FusionResult() {
           </p>
         </div>
         <div className="page-header-right">
-          <img src={sareesilhouette} alt="" className="decor-silhouette" />
           <Link to="/collections" className="back-btn">
             <FiChevronLeft /> Back to result
           </Link>

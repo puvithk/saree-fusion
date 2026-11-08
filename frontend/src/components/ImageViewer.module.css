@@ -172,3 +172,13 @@
     display: none;             /* Fit shows icon only on small phones */
   }
 }
+
+/* Dark theme: the translucent-white bar would leave light icons on a light pill */
+:global([data-theme='dark']) .toolbar {
+  background: rgba(24, 28, 70, 0.7);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+:global([data-theme='dark']) .toolbar button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.14);
+}

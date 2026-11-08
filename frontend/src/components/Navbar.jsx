@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { FiSearch, FiUser, FiHeart, FiShoppingCart, FiGrid } from 'react-icons/fi';
+import { FiSearch, FiUser, FiGrid } from 'react-icons/fi';
 import { BiHome, BiPencil } from 'react-icons/bi';
 import { BsGrid, BsChevronRight } from 'react-icons/bs';
 import { GiClothes } from 'react-icons/gi';
@@ -91,8 +91,6 @@ export default function Navbar() {
           <button className="action-btn" aria-label="Search"><FiSearch /></button>
           <ThemeToggle />
           {account}
-          <button className="action-btn" aria-label="Wishlist"><FiHeart /></button>
-          <button className="action-btn" aria-label="Cart"><FiShoppingCart /></button>
         </div>
 
         <button
@@ -156,8 +154,6 @@ export default function Navbar() {
                 <div className="mobile-quick">
                   <button className="action-btn" aria-label="Search"><FiSearch /></button>
                   <ThemeToggle />
-                  <button className="action-btn" aria-label="Wishlist"><FiHeart /></button>
-                  <button className="action-btn" aria-label="Cart"><FiShoppingCart /></button>
                 </div>
                 {account}
               </div>

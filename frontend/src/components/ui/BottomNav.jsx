@@ -13,12 +13,12 @@ const TABS = [
 /** Sticky bottom tab bar for phones/tablets (hidden on desktop). */
 export default function BottomNav({ onMore, moreOpen }) {
   const { pathname } = useLocation();
-  const item = 'sf-tap relative flex min-h-[56px] flex-1 flex-col items-center justify-center gap-0.5 text-[11px] font-medium';
+  const item = 'sf-tap relative flex min-h-[62px] flex-1 flex-col items-center justify-center gap-1 px-0.5 pt-1 text-[10.5px] font-medium leading-none';
 
   return createPortal(
     <nav aria-label="Bottom navigation"
-      className="fixed inset-x-0 bottom-0 z-[150] border-t border-line bg-glass pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_30px_rgba(0,0,0,0.18)] backdrop-blur-xl min-[1101px]:hidden">
-      <div className="mx-auto flex max-w-2xl items-stretch px-1">
+      className="fixed inset-x-0 bottom-0 z-[150] border-t border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_30px_rgba(0,0,0,0.18)] backdrop-blur-xl min-[1101px]:hidden">
+      <div className="mx-auto flex max-w-2xl items-stretch gap-0.5 px-2">
         {TABS.map(({ to, label, icon: Icon, end }) => {
           const active = end ? pathname === to : pathname.startsWith(to);
           return (

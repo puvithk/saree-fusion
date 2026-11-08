@@ -20,6 +20,8 @@ from saree_generator import GenerateSaree, GenerateComplete
 import db
 import auth
 import blobstore
+import admin
+from admin_routes import admin_bp
 from flask import Response, g, redirect
 
 # Initialize generators
@@ -39,6 +41,12 @@ CORS(app, origins=ALLOWED_ORIGINS, supports_credentials=True)
 
 # Turn AuthError into JSON so the frontend gets a readable reason, not an HTML page.
 auth.register_error_handler(app)
+
+@app.errorhandler(admin.AdminAuthError)
+def _handle_admin_auth(err):
+    return jsonify({"error": err.message, "authenticated": False}), err.status
+
+app.register_blueprint(admin_bp)
 
 
 @app.errorhandler(db.DatabaseNotConfigured)
@@ -407,6 +415,7 @@ def save_batch(batch):
 
 # Shared app artwork and the drape reference masks belong to no account, so they
 # load without a session. Everything else under static/ is somebody's work.
+app.config["STATIC_DIR"] = STATIC_DIR
 PUBLIC_STATIC_PREFIXES = ("assets/", "demo_reference/")
 
 

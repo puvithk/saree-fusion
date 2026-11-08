@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UploadCloud, X, Download, Printer, RefreshCw, ArrowLeft, LogOut, ArrowRight, ChevronDown } from 'lucide-react';
 import { useSareeDesign } from '../context/SareeDesignContext.jsx';
@@ -10,13 +10,9 @@ import GeneratingOverlay from '../components/saree/GeneratingOverlay';
 import { generateBatch } from '../utils/generateBatch';
 import { haptic } from '../utils/haptics';
 
-// three.js is only downloaded when the 3D view is first opened
-const DrapeViewer3D = lazy(() => import('../components/saree/DrapeViewer3D'));
-
 const VIEWS = [
   { key: 'layout', label: 'Flat template' },
   { key: 'cad',    label: 'CAD sketch' },
-  { key: '3d',     label: 'Mannequin drape' },
 ];
 
 const DRAPE_STYLES = [
@@ -470,9 +466,9 @@ export default function Simulation() {
       <header className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h1 className="font-display text-2xl font-extrabold tracking-tight text-gold sm:text-3xl">Simulation studio</h1>
-          <p className="text-xs text-muted sm:text-sm">Flat template · CAD · 3D mannequin drape. Changes auto-save to your collection on exit.</p>
+          <p className="text-xs text-muted sm:text-sm">Flat template · CAD. Changes auto-save to your collection on exit.</p>
         </div>
-        <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
+        <div className="flex flex-wrap gap-2">
           <button type="button" onClick={() => navigate(-1)} className={`${tap} shrink-0 border border-line bg-surface text-fg`}>
             <ArrowLeft size={16} /> Back
           </button>
@@ -497,7 +493,7 @@ export default function Simulation() {
         {/* ── Viewport ── (first on mobile, centre on desktop) */}
         <main className="order-first min-w-0 space-y-3 xl:order-none">
           <div className={`${panel} p-2`}>
-            <div role="tablist" className="grid grid-cols-3 gap-1.5">
+            <div role="tablist" className="grid grid-cols-2 gap-1.5">
               {VIEWS.map(v => (
                 <button key={v.key} type="button" role="tab" aria-selected={v.key === view}
                   onClick={() => { haptic(); setView(v.key); }}
@@ -510,21 +506,6 @@ export default function Simulation() {
 
           <div className={`${panel} relative p-2 sm:p-3`}>
             {view === 'cad' && <div className="overflow-auto"><CadViewer params={p} specs={specs} /></div>}
-
-            {view === '3d' && (
-              <Suspense fallback={<div className="grid h-64 place-items-center text-muted">Loading 3D viewer…</div>}>
-                <div className="mb-2 flex flex-wrap items-center gap-2">
-                  <span className="text-xs text-muted">Drape style</span>
-                  {DRAPE_STYLES.map(d => (
-                    <button key={d.key} type="button" onClick={() => setDrapeStyle(d.key)}
-                      className={`sf-tap min-h-11 rounded-xl px-3 text-xs font-semibold ${d.key === drapeStyle ? 'bg-gold text-[#1d1700]' : 'bg-surface-2 text-muted'}`}>
-                      {d.label}
-                    </button>
-                  ))}
-                </div>
-                <div className="overflow-hidden rounded-xl"><DrapeViewer3D imgs={imgs} params={p} drapeStyle={drapeStyle} /></div>
-              </Suspense>
-            )}
 
             {/* The layout canvas stays mounted: it feeds yarn colours and the auto-save thumbnail */}
             <div className={view === 'layout' ? 'block' : 'hidden'}>
@@ -542,7 +523,7 @@ export default function Simulation() {
               otherwise become the containing block for position:fixed. */}
           {view === 'layout' && (
   <div role="toolbar" aria-label="Zoom"
-    className="fixed bottom-[calc(80px+env(safe-area-inset-bottom))] left-1/2 z-[145] flex -translate-x-1/2 items-center gap-1 rounded-2xl border border-line bg-glass p-1.5 shadow-2xl backdrop-blur-xl lg:sticky lg:bottom-3 lg:left-auto lg:mx-auto lg:w-fit lg:translate-x-0 lg:shadow-lg">
+    className="relative z-[145] mx-auto flex w-fit items-center gap-1 rounded-2xl border border-line bg-glass p-1.5 shadow-2xl backdrop-blur-xl lg:sticky lg:bottom-3 lg:left-auto lg:mx-auto lg:w-fit lg:translate-x-0 lg:shadow-lg">
     {[['75%', () => setZoom(0.75), presetActive(0.75)], ['100%', () => setZoom(1), presetActive(1)], ['Fit', fitToView, false]].map(([label, fn, on]) => (
       <button key={label} type="button" onClick={() => { haptic(); fn(); }}
         className={`sf-tap min-h-11 min-w-14 rounded-xl px-3 text-sm font-bold ${on ? 'bg-gold text-[#1d1700]' : 'text-fg'}`}>

@@ -18,6 +18,7 @@ and production both run Postgres so a bug found locally is the bug production ha
 import json
 import mimetypes
 import os
+import uuid
 
 DATABASE_URL = os.environ.get("DATABASE_URL") or os.environ.get("POSTGRES_URL") or ""
 
@@ -82,11 +83,31 @@ CREATE TABLE IF NOT EXISTS files (
 CREATE INDEX IF NOT EXISTS batches_owner_idx     ON batches     (user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS orders_owner_idx      ON orders      (user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS simulations_owner_idx ON simulations (user_id, created_at DESC);
+
+-- Admin portal. users.status is NOT here: users already exists with live rows, so
+-- the column is added by _MIGRATIONS below (CREATE TABLE IF NOT EXISTS would skip it).
+CREATE TABLE IF NOT EXISTS admin_actions (
+    id          BIGSERIAL PRIMARY KEY,
+    action      TEXT NOT NULL,
+    target_id   TEXT,
+    detail      JSONB,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS admin_login_attempts (
+    id            BIGSERIAL PRIMARY KEY,
+    ip            TEXT,
+    succeeded     BOOLEAN NOT NULL,
+    attempted_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS admin_login_attempts_ip_idx ON admin_login_attempts (ip, attempted_at DESC);
 """
 
 # `files` predates this module without a user_id, so add it when upgrading in place.
 _MIGRATIONS = [
     "ALTER TABLE files ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES users(id) ON DELETE CASCADE",
+    # `users` has live rows, so the admin portal's status column must be an ALTER.
+    "ALTER TABLE users ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'active'",
 ]
 
 
@@ -146,7 +167,7 @@ def upsert_user(google_sub, email, name=None, picture_url=None):
 def get_user(user_id):
     with connect() as conn:
         row = conn.execute(
-            "SELECT id, google_sub, email, name, picture_url FROM users WHERE id = %s",
+            "SELECT id, google_sub, email, name, picture_url, status FROM users WHERE id = %s",
             (user_id,),
         ).fetchone()
     return _user_dict(row) if row else None
@@ -159,6 +180,7 @@ def _user_dict(row):
         "email": row[2],
         "name": row[3],
         "pictureUrl": row[4],
+        "status": row[5] if len(row) > 5 else "active",
     }
 
 
@@ -178,6 +200,96 @@ def claim_unowned_records(user_id):
             )
             claimed[table] = result.rowcount
     return claimed
+
+
+USER_STATUSES = ("active", "suspended")
+
+
+def set_user_status(user_id, status):
+    """Set a user's status. Returns True when a row changed.
+
+    Anything other than 'active' or 'suspended' returns False without touching
+    the database, so the HTTP layer can answer 400. A user_id that is not a
+    valid UUID also returns False (Postgres would raise a DataError otherwise).
+    """
+    if status not in USER_STATUSES or not user_id:
+        return False
+    try:
+        user_id = str(uuid.UUID(user_id))
+    except (ValueError, AttributeError, TypeError):
+        return False
+    with connect() as conn:
+        result = conn.execute(
+            "UPDATE users SET status = %s WHERE id = %s", (status, user_id)
+        )
+    return result.rowcount > 0
+
+
+# --------------------------------------------------------------------------
+# Admin audit log and login throttling
+# --------------------------------------------------------------------------
+def record_admin_action(action, target_id=None, detail=None):
+    with connect() as conn:
+        conn.execute(
+            "INSERT INTO admin_actions (action, target_id, detail) VALUES (%s, %s, %s::jsonb)",
+            (action, target_id, json.dumps(detail) if detail is not None else None),
+        )
+
+
+UNKNOWN_IP = "unknown"
+
+
+def _ip_key(ip):
+    """Coalesce a missing IP to one shared bucket.
+
+    `ip = %s` never matches NULL, so a None IP would be unthrottleable. All
+    unknown-IP attempts share the 'unknown' bucket: this can over-throttle but
+    never under-throttle.
+    """
+    return ip or UNKNOWN_IP
+
+
+def clear_login_attempts(ip):
+    """Delete every recorded attempt for `ip` (a success resets its throttle)."""
+    with connect() as conn:
+        conn.execute(
+            "DELETE FROM admin_login_attempts WHERE ip = %s", (_ip_key(ip),)
+        )
+
+
+def record_login_attempt(ip, succeeded):
+    """Record a failure, or on success clear that IP's recent failures.
+
+    Clearing is done here, so the login endpoint only has to call this once
+    per attempt. A success is not stored as a row: it would be deleted by the
+    clear anyway, and successes are never counted.
+    """
+    if succeeded:
+        clear_login_attempts(ip)
+        return
+    with connect() as conn:
+        conn.execute(
+            "INSERT INTO admin_login_attempts (ip, succeeded) VALUES (%s, %s)",
+            (_ip_key(ip), False),
+        )
+
+
+def recent_failed_attempts(ip, minutes=15):
+    """Failed admin logins from `ip` in the last `minutes`, counted in Postgres.
+
+    Counted in SQL, not memory: serverless instances do not share memory, so an
+    in-process counter could be evaded by spreading attempts across instances.
+    """
+    with connect() as conn:
+        row = conn.execute(
+            """
+            SELECT count(*) FROM admin_login_attempts
+            WHERE ip = %s AND succeeded = false
+              AND attempted_at > now() - make_interval(mins => %s)
+            """,
+            (_ip_key(ip), int(minutes)),
+        ).fetchone()
+    return int(row[0])
 
 
 # --------------------------------------------------------------------------
@@ -386,3 +498,106 @@ def persist_dir(directory, root, user_id=None):
                     put_file(key, f.read(), user_id=user_id)
             except Exception as exc:  # one bad file must not fail the whole request
                 print(f"Could not persist {key}: {exc}")
+
+
+# --------------------------------------------------------------------------
+# Admin read-only queries (cross-user by design; only admin_routes calls these)
+# --------------------------------------------------------------------------
+def admin_overview():
+    with connect() as conn:
+        one = lambda q: conn.execute(q).fetchone()[0]
+        totals = {
+            "users": one("SELECT count(*) FROM users"),
+            "suspended": one("SELECT count(*) FROM users WHERE status = 'suspended'"),
+            "batches": one("SELECT count(*) FROM batches"),
+            "orders": one("SELECT count(*) FROM orders"),
+            "simulations": one("SELECT count(*) FROM simulations"),
+            "activeUsers7d": one("SELECT count(*) FROM users WHERE last_login_at > now() - interval '7 days'"),
+            "storageBytes": one("SELECT COALESCE(sum(length(content)),0) FROM files"),
+        }
+        series = conn.execute(
+            """
+            SELECT to_char(d::date, 'YYYY-MM-DD'),
+                   (SELECT count(*) FROM batches b WHERE b.created_at::date = d::date),
+                   (SELECT count(*) FROM orders o WHERE o.created_at::date = d::date),
+                   (SELECT count(*) FROM users u WHERE u.created_at::date = d::date)
+            FROM generate_series(now()::date - 29, now()::date, interval '1 day') AS d
+            ORDER BY d
+            """
+        ).fetchall()
+        recent = conn.execute(
+            """
+            SELECT 'batch', b.id, u.email, b.created_at FROM batches b LEFT JOIN users u ON u.id = b.user_id
+            UNION ALL
+            SELECT 'order', o.id, u.email, o.created_at FROM orders o LEFT JOIN users u ON u.id = o.user_id
+            ORDER BY 4 DESC LIMIT 12
+            """
+        ).fetchall()
+    return {
+        "totals": totals,
+        "series": [{"date": r[0], "batches": r[1], "orders": r[2], "signups": r[3]} for r in series],
+        "recent": [{"kind": r[0], "id": r[1], "email": r[2], "at": r[3].isoformat()} for r in recent],
+    }
+
+
+def admin_list_users():
+    with connect() as conn:
+        rows = conn.execute(
+            """
+            SELECT u.id, u.email, u.name, u.picture_url, u.status, u.created_at, u.last_login_at,
+                   (SELECT count(*) FROM batches b WHERE b.user_id = u.id),
+                   (SELECT count(*) FROM orders o WHERE o.user_id = u.id),
+                   (SELECT count(*) FROM simulations s WHERE s.user_id = u.id)
+            FROM users u ORDER BY u.created_at DESC
+            """
+        ).fetchall()
+    iso = lambda v: v.isoformat() if v else None
+    return [{
+        "id": str(r[0]), "email": r[1], "name": r[2], "pictureUrl": r[3], "status": r[4],
+        "createdAt": iso(r[5]), "lastLoginAt": iso(r[6]),
+        "batches": r[7], "orders": r[8], "simulations": r[9],
+    } for r in rows]
+
+
+def _valid_uuid(value):
+    try:
+        return str(uuid.UUID(value))
+    except (ValueError, AttributeError, TypeError):
+        return None
+
+
+def admin_user_records(user_id):
+    """All batches and orders of one user, newest first; None for an unknown user."""
+    uid = _valid_uuid(user_id)
+    if not uid:
+        return None
+    with connect() as conn:
+        if not conn.execute("SELECT 1 FROM users WHERE id = %s", (uid,)).fetchone():
+            return None
+        batches = conn.execute(
+            "SELECT data, created_at FROM batches WHERE user_id = %s ORDER BY created_at DESC", (uid,)
+        ).fetchall()
+        orders = conn.execute(
+            "SELECT data, created_at FROM orders WHERE user_id = %s ORDER BY created_at DESC", (uid,)
+        ).fetchall()
+    def batch_view(data, at):
+        comps = data.get("uploadedComponents") or {}
+        return {
+            "id": data.get("id"), "name": data.get("name"), "status": data.get("status"),
+            "createdOn": data.get("createdOn"), "_createdAt": at.isoformat(),
+            "description": data.get("description"), "engine": data.get("engine"),
+            "totalDesigns": data.get("totalDesigns"),
+            "uploaded": sum(len(comps.get(k, [])) for k in ("pallu", "border", "body")),
+            "generated": len(data.get("designs") or []),
+            "inputs": {k: [c.get("label") for c in comps.get(k, [])] for k in ("pallu", "border", "body")},
+            "designs": [{"name": x.get("name"), "tags": x.get("tags"), "matchPercent": x.get("matchPercent")}
+                        for x in data.get("designs") or []],
+        }
+
+    def order_view(data, at):
+        return {k: data.get(k) for k in ("id", "batchId", "status", "customerName", "quantity", "price", "createdOn")} | {"_createdAt": at.isoformat()}
+
+    return {
+        "batches": [batch_view(r[0], r[1]) for r in batches],
+        "orders": [order_view(r[0], r[1]) for r in orders],
+    }

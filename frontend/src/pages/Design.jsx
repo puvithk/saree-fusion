@@ -247,7 +247,7 @@ export default function Design() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-[1400px] px-4 pb-32 pt-5 sm:px-6 lg:px-10 lg:pb-12 lg:pt-8">
+    <div className="mx-auto w-full max-w-[1400px] px-4 pb-28 pt-5 sm:px-6 lg:px-10 lg:pb-12 lg:pt-8">
       <header className="mb-5 lg:mb-8">
         <h1 className="font-display text-3xl font-extrabold tracking-tight text-fg sm:text-4xl">
           Design your <span className="text-gold">saree</span>
@@ -357,8 +357,8 @@ export default function Design() {
         </aside>
       </div>
 
-      {/* Mobile sticky step controls, sitting above the bottom nav */}
-      <div className="fixed inset-x-0 bottom-[calc(64px+env(safe-area-inset-bottom))] z-[140] border-t border-line bg-glass px-4 py-3 backdrop-blur-xl lg:hidden">
+      {/* Mobile step controls: inline after the card so they never cover it on short screens */}
+      <div className="mt-5 lg:hidden">
         <div className="mx-auto flex max-w-xl items-center gap-3">
           <button type="button" onClick={() => go(step - 1)} disabled={step === 0} aria-label="Previous step"
             className="sf-tap grid h-12 w-12 shrink-0 place-items-center rounded-xl border border-line text-fg disabled:opacity-35">

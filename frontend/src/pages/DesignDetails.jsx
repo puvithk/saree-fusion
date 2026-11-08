@@ -4,8 +4,7 @@ import { FiChevronLeft, FiChevronRight, FiShoppingCart } from 'react-icons/fi';
 import { BsCreditCard } from 'react-icons/bs';
 import SareeCard from '../components/SareeCard';
 import Pagination from '../components/Pagination';
-import sareesilhouette from '../assets/saree-silhouette.png';
-import { materials } from '../data/mockData';
+import { materials, latestSarees } from '../data/mockData';
 import ImageViewer from '../components/ImageViewer';
 import { API_BASE_URL } from '../config';
 
@@ -36,6 +35,21 @@ export default function DesignDetails() {
   };
 
   useEffect(() => {
+    // Batch "0" is the public saree catalog (static sample designs), not a saved
+    // batch: it exists for every visitor, and never depends on what they generated.
+    if (batchId === '0') {
+      const designs = latestSarees.map((s, i) => ({
+        ...s,
+        id: String(i),
+        templateImage: s.image,
+        engine: 'SareeFusion catalog',
+      }));
+      const found = designs.find((d) => d.id === designId);
+      setBatch({ id: '0', designs, description: 'A sample design from the SareeFusion catalog.' });
+      setDesign(found || designs[0]);
+      setLoading(false);
+      return;
+    }
     fetch(`${API_BASE_URL}/api/batches/${batchId}`)
       .then((res) => res.json())
       .then((data) => {
@@ -375,7 +389,6 @@ export default function DesignDetails() {
 
       <div className="design-top-bar">
         <div className="design-decor">
-          <img src={sareesilhouette} alt="" className="decor-silhouette small" />
         </div>
         <Link to={`/collections/batch/${batchId}`} className="back-btn">
           <FiChevronLeft /> Back to result

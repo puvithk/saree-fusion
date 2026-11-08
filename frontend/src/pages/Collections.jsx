@@ -4,7 +4,6 @@ import { motion } from 'framer-motion';
 import { FiSearch, FiX, FiPlus, FiTrash2, FiCheckCircle, FiCpu, FiEdit3, FiFolder, FiGrid } from 'react-icons/fi';
 import TiltCard from '../components/motion/TiltCard';
 import QuickActionSheet from '../components/collections/QuickActionSheet';
-import sareesilhouette from '../assets/saree-silhouette.png';
 import { deleteSavedSimulation } from '../utils/savedSimulations';
 import { STATUS, groupFolders, useCollectionItems } from '../utils/collectionItems';
 
@@ -198,7 +197,6 @@ export default function Collections() {
               <span><strong>{countFor('compiled')}</strong> loom-ready</span>
             </div>
           </div>
-          <img src={sareesilhouette} alt="" className="collections-decor" />
         </header>
 
         <section className="cg-controls" aria-label="Filter collection">

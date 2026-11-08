@@ -185,10 +185,15 @@ def current_user(required=True):
         token = request.cookies.get(COOKIE_NAME)
         if token:
             claims = read_session(token)
+            if claims.get("role"):
+                # An admin token is never a weaver session.
+                raise AuthError("Your session is not valid. Please sign in again.")
             user = db.get_user(claims.get("sub"))
             # A valid token whose user row is gone means the account was deleted.
             if user is None:
                 raise AuthError("Your account no longer exists. Please sign in again.")
+            if user.get("status") == "suspended":
+                raise AuthError("This account has been suspended. Contact support.", status=403)
         g.sf_user = user
 
     if required and user is None:

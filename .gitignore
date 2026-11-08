@@ -10,3 +10,6 @@ __pycache__/
 
 # Backups left by refactoring tools
 *.bak
+
+# Subagent-driven development scratch
+.superpowers/

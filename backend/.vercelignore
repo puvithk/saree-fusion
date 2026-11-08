@@ -1,0 +1,28 @@
+# Paths here are relative to this directory, because the backend Vercel project
+# sets Root Directory to "backend" and reads .vercelignore from there. The
+# repo-root .vercelignore does not apply to that project.
+
+# Generated designs and loom files live in Cloudflare R2 (211 objects verified
+# present). Shipping them would add ~128 MB to a bundle capped at 250 MB
+# unzipped, and copy all of it into /tmp on every cold start. serve_static
+# falls through to R2 whenever a file is not on local disk.
+static/batches
+static/orders
+
+# static/assets and static/demo_reference MUST stay: the generator reads the
+# mask PNGs from demo_reference at runtime.
+
+# Local-only
+venv
+.venv
+__pycache__
+test_out
+test_drape.py
+test_mask.py
+
+# Superseded modules kept only as rollback paths
+storage.py
+storage_gcs.py
+
+# Backups made while refactoring
+*.bak

@@ -1,0 +1,94 @@
+.login-page {
+  min-height: calc(100vh - 160px);
+  display: grid;
+  place-items: center;
+  padding: 2rem 1rem;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 27rem;
+  padding: 2.5rem 2rem;
+  text-align: center;
+  background: var(--sf-surface, #fff);
+  border: 1px solid var(--sf-border, rgba(0, 0, 0, 0.08));
+  border-radius: 1.25rem;
+  box-shadow: var(--shadow-lg, 0 20px 40px rgba(0, 0, 0, 0.08));
+}
+
+.login-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.login-mark {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--white, #fff);
+  background: var(--sf-accent, #8b1d3f);
+  border-radius: 0.75rem;
+}
+
+.login-brand h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--sf-text, #1a1a1a);
+}
+
+.login-tagline {
+  margin: 0 0 2rem;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--sf-muted, #6b6b6b);
+}
+
+.login-action {
+  display: grid;
+  gap: 0.75rem;
+  justify-items: center;
+  min-height: 3rem;
+}
+
+/* Google renders its own button into this element. */
+.login-google {
+  display: grid;
+  place-items: center;
+  min-height: 2.75rem;
+}
+
+.login-status {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--sf-muted, #6b6b6b);
+}
+
+.login-status--warn { color: var(--amber-light, #b45309); }
+
+.login-error {
+  margin: 1.25rem 0 0;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  text-align: left;
+  color: #8a1c1c;
+  background: rgba(190, 40, 40, 0.07);
+  border: 1px solid rgba(190, 40, 40, 0.18);
+  border-radius: 0.625rem;
+}
+
+.login-footnote {
+  margin: 2rem 0 0;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--sf-muted, #8a8a8a);
+}

@@ -68,6 +68,8 @@
 .admin-root .ad-split section:only-child{grid-column:1/-1}
 .admin-root .ad-tr4{grid-template-columns:1.6fr 1fr 1.2fr 1.2fr}
 .admin-root .ad-tabs.ad-view{display:flex;max-width:340px;margin-top:.8rem}
+.admin-root .ad-form{display:grid;gap:.9rem;max-width:520px}
+.admin-root .ad-ok{background:rgba(52,211,182,.12);border:1px solid rgba(52,211,182,.35);color:#7ee8d3;padding:.6rem .8rem;border-radius:10px;font-size:.88rem}
 /* tablet / mobile */
 @media (max-width:1023px){
   .admin-root .ad-split{grid-template-columns:1fr}.admin-root .ad-tabs{display:flex}

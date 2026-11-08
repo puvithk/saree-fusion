@@ -4,6 +4,7 @@ import AdminLogin from './AdminLogin.jsx';
 import AdminLayout from './AdminLayout.jsx';
 import Overview from './Overview.jsx';
 import Users from './Users.jsx';
+import Settings from './Settings.jsx';
 import './admin.css';
 
 export default function AdminApp() {
@@ -15,6 +16,7 @@ export default function AdminApp() {
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<Overview />} />
             <Route path="users" element={<Users />} />
+            <Route path="settings" element={<Settings />} />
           </Route>
           <Route path="/admin/*" element={<Navigate to="/admin" replace />} />
         </Routes>

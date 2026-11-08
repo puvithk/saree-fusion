@@ -5,6 +5,7 @@ import { useAdmin } from './AdminAuth.jsx';
 const NAV = [
   { to: '/admin', label: 'Overview', icon: '◈', end: true },
   { to: '/admin/users', label: 'Users & Inspector', icon: '☰' },
+  { to: '/admin/settings', label: 'Help & Settings', icon: '✎' },
 ];
 
 export default function AdminLayout() {

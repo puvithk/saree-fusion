@@ -92,3 +92,35 @@
   line-height: 1.5;
   color: var(--sf-muted, #8a8a8a);
 }
+
+/* Separate entry for the single admin account; the weaver (Google) flow above is unchanged. */
+.login-admin {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+  padding-top: 1.1rem;
+  border-top: 1px solid var(--sf-border, rgba(128, 128, 128, 0.25));
+  font-size: 0.85rem;
+  color: var(--sf-muted, #8a8a8a);
+}
+
+.login-admin a {
+  color: var(--sf-gold, #a8820f);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.login-admin a:hover { text-decoration: underline; }
+
+.login-home {
+  display: inline-block;
+  margin-top: 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--sf-gold, #a8820f);
+  text-decoration: none;
+}
+
+.login-home:hover { text-decoration: underline; }

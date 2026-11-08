@@ -101,6 +101,13 @@ CREATE TABLE IF NOT EXISTS admin_login_attempts (
     attempted_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS admin_login_attempts_ip_idx ON admin_login_attempts (ip, attempted_at DESC);
+
+-- Small key/value store for things the admin edits (e.g. the Help phone number).
+CREATE TABLE IF NOT EXISTS app_settings (
+    key         TEXT PRIMARY KEY,
+    value       TEXT NOT NULL,
+    updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
 """
 
 # `files` predates this module without a user_id, so add it when upgrading in place.
@@ -601,3 +608,29 @@ def admin_user_records(user_id):
         "batches": [batch_view(r[0], r[1]) for r in batches],
         "orders": [order_view(r[0], r[1]) for r in orders],
     }
+
+
+# --------------------------------------------------------------------------
+# App settings (admin-editable, e.g. the Help contact shown to weavers)
+# --------------------------------------------------------------------------
+def get_settings(keys):
+    """Return {key: value} for the given keys; missing keys come back as ''."""
+    out = {k: "" for k in keys}
+    with connect() as conn:
+        rows = conn.execute(
+            "SELECT key, value FROM app_settings WHERE key = ANY(%s)", (list(keys),)
+        ).fetchall()
+    for k, v in rows:
+        out[k] = v
+    return out
+
+
+def set_setting(key, value):
+    with connect() as conn:
+        conn.execute(
+            """
+            INSERT INTO app_settings (key, value, updated_at) VALUES (%s, %s, now())
+            ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now()
+            """,
+            (key, value),
+        )

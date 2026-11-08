@@ -644,6 +644,13 @@ def health():
         return jsonify(report), 503
 
 
+@app.route('/api/help', methods=['GET'])
+def public_help():
+    """The support contact the admin configured. Public: the Help page works signed out too."""
+    s = db.get_settings(("help_phone", "help_message"))
+    return jsonify({"phone": s["help_phone"], "message": s["help_message"]})
+
+
 @app.route('/api/auth/config', methods=['GET'])
 def auth_config():
     """The public client id, so the frontend needs no build-time copy of it."""

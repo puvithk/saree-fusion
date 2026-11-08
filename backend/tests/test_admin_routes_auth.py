@@ -58,3 +58,20 @@ def test_data_routes_need_admin(client):
 def test_no_image_route(client):
     client.post("/api/admin/login", json={"username": "admin", "password": "test-password-123"})
     assert client.get("/api/admin/file/batches/x/y.png").status_code == 404
+
+
+def test_settings_require_admin(client):
+    assert client.get("/api/admin/settings").status_code == 401
+    assert client.put("/api/admin/settings", json={"helpPhone": "+91 98765 43210"}).status_code == 401
+
+
+def test_settings_validation(client, monkeypatch):
+    saved = {}
+    monkeypatch.setattr(db, "set_setting", lambda k, v: saved.__setitem__(k, v))
+    monkeypatch.setattr(db, "record_admin_action", lambda *a, **k: None)
+    client.post("/api/admin/login", json={"username": "admin", "password": "test-password-123"})
+    assert client.put("/api/admin/settings", json={"helpPhone": "abc"}).status_code == 400
+    assert client.put("/api/admin/settings", json={"helpPhone": "123"}).status_code == 400
+    assert client.put("/api/admin/settings", json={"helpPhone": "x" * 5, "helpMessage": 5}).status_code == 400
+    ok = client.put("/api/admin/settings", json={"helpPhone": "+91 98765 43210", "helpMessage": "Mon-Sat 9-6"})
+    assert ok.status_code == 200 and saved["help_phone"] == "+91 98765 43210"

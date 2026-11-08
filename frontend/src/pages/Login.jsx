@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import './Login.css';
 
@@ -88,6 +88,13 @@ export default function Login() {
         <p className="login-footnote">
           We only ever read your name, email address and profile picture from Google.
         </p>
+
+        <Link to="/" className="login-home">← Back to home</Link>
+
+        <div className="login-admin">
+          <span>Administrator?</span>
+          <Link to="/admin/login">Admin sign in</Link>
+        </div>
       </div>
     </div>
   );

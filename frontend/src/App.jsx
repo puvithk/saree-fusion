@@ -4,6 +4,7 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Home from './pages/Home';
 import Login from './pages/Login';
+import Help from './pages/Help';
 import Collections from './pages/Collections';
 import CollectionDetail from './pages/CollectionDetail';
 import CollectionFolder from './pages/CollectionFolder';
@@ -43,6 +44,7 @@ function WeaverApp() {
                 {/* Public: the landing page and the static saree catalogue */}
                 <Route path="/" element={<Home />} />
                 <Route path="/sarees" element={<Sarees />} />
+                <Route path="/help" element={<Help />} />
 
                 {/* Private: a user's designs, batches, orders and loom files */}
                 <Route path="/collections" element={guarded(<Collections />)} />

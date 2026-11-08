@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAdmin } from './AdminAuth.jsx';
 
 export default function AdminLogin() {
@@ -29,6 +29,7 @@ export default function AdminLogin() {
         <label>Password<input type="password" value={password} onChange={(e) => setP(e.target.value)} autoComplete="current-password" /></label>
         {error && <div className="ad-error" role="alert">{error}</div>}
         <button className="ad-btn primary" disabled={busy || !username || !password}>{busy ? 'Signing in…' : 'Sign in'}</button>
+        <Link to="/" className="ad-muted small" style={{ textAlign: 'center', color: 'inherit' }}>← Back to home</Link>
       </form>
     </div>
   );

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { FiSearch, FiUser, FiGrid } from 'react-icons/fi';
+import { FiSearch, FiUser, FiGrid, FiHelpCircle } from 'react-icons/fi';
 import { BiHome, BiPencil } from 'react-icons/bi';
 import { BsGrid, BsChevronRight } from 'react-icons/bs';
 import { GiClothes } from 'react-icons/gi';
@@ -89,6 +89,7 @@ export default function Navbar() {
 
         <div className="navbar-actions">
           <button className="action-btn" aria-label="Search"><FiSearch /></button>
+          <Link to="/help" className="action-btn" aria-label="Help" title="Help"><FiHelpCircle /></Link>
           <ThemeToggle />
           {account}
         </div>
@@ -148,6 +149,11 @@ export default function Navbar() {
                     </NavLink>
                   </motion.li>
                 ))}
+                <li>
+                  <NavLink to="/help" className={`mobile-link ${isActive('/help') ? 'active' : ''}`}>
+                    <FiHelpCircle /><span>Help</span><BsChevronRight className="mobile-chev" />
+                  </NavLink>
+                </li>
               </ul>
 
               <div className="mobile-foot">

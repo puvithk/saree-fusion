@@ -2,6 +2,8 @@
 
 Kept in its own blueprint so the weaver routes in main.py are untouched.
 """
+import re
+
 from flask import Blueprint, jsonify, request
 
 import admin
@@ -73,3 +75,37 @@ def user_records(user_id):
     if records is None:
         return jsonify({"error": "User not found."}), 404
     return jsonify(records)
+
+
+# --------------------------------------------------------------------------
+# Help contact: edited here, shown to weavers on the Help page
+# --------------------------------------------------------------------------
+HELP_KEYS = ("help_phone", "help_message")
+_PHONE_RE = re.compile(r"^[0-9+\-()\s]{7,20}$")
+
+
+@admin_bp.route("/settings", methods=["GET"])
+@admin.require_admin
+def get_settings():
+    s = db.get_settings(HELP_KEYS)
+    return jsonify({"helpPhone": s["help_phone"], "helpMessage": s["help_message"]})
+
+
+@admin_bp.route("/settings", methods=["PUT"])
+@admin.require_admin
+def put_settings():
+    body = request.get_json(silent=True) or {}
+    phone = body.get("helpPhone", "")
+    message = body.get("helpMessage", "")
+    if not isinstance(phone, str) or not isinstance(message, str):
+        return jsonify({"error": "Invalid values."}), 400
+    phone, message = phone.strip(), message.strip()
+    # An empty phone clears the Help contact; otherwise it must look like a phone number.
+    if phone and (not _PHONE_RE.match(phone) or sum(c.isdigit() for c in phone) < 7):
+        return jsonify({"error": "Enter a valid phone number (digits, +, spaces, dashes)."}), 400
+    if len(message) > 200:
+        return jsonify({"error": "The note must be 200 characters or fewer."}), 400
+    db.set_setting("help_phone", phone)
+    db.set_setting("help_message", message)
+    db.record_admin_action("settings.help", detail={"helpPhone": phone})
+    return jsonify({"helpPhone": phone, "helpMessage": message})

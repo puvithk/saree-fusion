@@ -1,16 +1,16 @@
-// Saved simulation designs, stored in the backend database
-// (simulations.json via /api/simulations).
-// Each entry is small: a ~30 KB JPEG thumbnail plus colour / layout metadata.
+// Saved simulation designs, stored per account in Postgres (/api/simulations).
+//
+// Ownership used to travel as an `?owner=` query parameter, which any caller
+// could set to any value. It now comes from the session cookie the browser
+// sends automatically, so these calls pass no owner at all.
 import { API_BASE_URL } from '../config';
 
-// There are no accounts: every simulation belongs to this single owner id
-// (the same id the old guest session used, so earlier saves stay visible).
-const OWNER = 'guest@example.com';
 const LEGACY_KEY = 'sf_saved_simulations:guest';
 
 export async function loadSavedSimulations() {
   await migrateLocalSimulations();
-  const res = await fetch(`${API_BASE_URL}/api/simulations?owner=${encodeURIComponent(OWNER)}`);
+  const res = await fetch(`${API_BASE_URL}/api/simulations`);
+  if (res.status === 401) throw new Error('Please sign in to see your saved simulations.');
   if (!res.ok) throw new Error(`Could not load simulations (${res.status})`);
   return res.json();
 }
@@ -21,7 +21,7 @@ export async function loadSavedSimulations() {
 const KEEPALIVE_MAX = 60 * 1024;
 
 export function upsertSavedSimulation(entry) {
-  const body = JSON.stringify({ ...entry, owner: OWNER });
+  const body = JSON.stringify(entry);
   fetch(`${API_BASE_URL}/api/simulations`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -32,12 +32,13 @@ export function upsertSavedSimulation(entry) {
 }
 
 export async function deleteSavedSimulation(id) {
-  await fetch(`${API_BASE_URL}/api/simulations/${encodeURIComponent(id)}?owner=${encodeURIComponent(OWNER)}`,
-    { method: 'DELETE' });
+  await fetch(`${API_BASE_URL}/api/simulations/${encodeURIComponent(id)}`, { method: 'DELETE' });
   return loadSavedSimulations();
 }
 
-// One-time move of simulations saved by older builds in localStorage
+// One-time move of simulations saved by older builds in localStorage.
+// These were written before accounts existed, so they land on whichever account
+// is signed in when the browser that holds them next opens the app.
 async function migrateLocalSimulations() {
   let legacy;
   try {
@@ -50,7 +51,7 @@ async function migrateLocalSimulations() {
     fetch(`${API_BASE_URL}/api/simulations`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...entry, owner: OWNER }),
+      body: JSON.stringify(entry),
     }).then((r) => r.ok).catch(() => false)));
   if (results.every(Boolean)) {
     try { localStorage.removeItem(LEGACY_KEY); } catch { /* ignore */ }

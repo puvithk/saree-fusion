@@ -1,3 +1,12 @@
 .vercel
 .env*
+# the template carries no secrets, so it must stay committed
+!.env.example
 .venv
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+
+# Backups left by refactoring tools
+*.bak

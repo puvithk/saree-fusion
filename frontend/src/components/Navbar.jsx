@@ -9,6 +9,7 @@ import { GiClothes } from 'react-icons/gi';
 import logoImage from '../assets/logo-image.png';
 import ThemeToggle from './ui/ThemeToggle';
 import BottomNav from './ui/BottomNav';
+import UserMenu from './ui/UserMenu';
 
 const navLinks = [
   { to: '/', label: 'Home', icon: <BiHome /> },
@@ -62,7 +63,7 @@ export default function Navbar() {
   const breadcrumbs = getBreadcrumbs();
   const isActive = (to) => (to === '/' ? location.pathname === '/' : location.pathname.startsWith(to));
 
-  const account = <button className="action-btn" aria-label="Account"><FiUser /></button>;
+  const account = <UserMenu />;
 
   return (
     <header className="navbar">

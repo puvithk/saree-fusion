@@ -6,3 +6,13 @@ backend/test_drape.py
 backend/test_mask.py
 **/node_modules
 frontend/dist
+
+# User-generated designs and loom files live in Cloudflare R2, verified present
+# before this exclusion was added. Shipping them would put ~128 MB in the
+# serverless bundle (250 MB unzipped limit) and copy it all into /tmp on every
+# cold start. serve_static falls through to R2 when a file is not on disk.
+#
+# static/assets and static/demo_reference deliberately stay: the generator
+# reads the mask PNGs from demo_reference at runtime.
+backend/static/batches
+backend/static/orders

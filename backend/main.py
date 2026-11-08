@@ -1,5 +1,6 @@
 import os
 import shutil
+import sys
 import random
 from datetime import datetime
 from flask import Flask, request, jsonify, send_from_directory
@@ -16,16 +17,34 @@ except ImportError:
     pass
 
 from saree_generator import GenerateSaree, GenerateComplete
-import storage
-from flask import Response
+import db
+import auth
+import blobstore
+from flask import Response, g, redirect
 
 # Initialize generators
 generateSaree = GenerateSaree()
 generetorFull = GenerateComplete()
 
 app = Flask(__name__)
-# Enable CORS for all routes to handle requests from the React frontend port
-CORS(app)
+
+# The session lives in a cookie, so CORS must name the exact origins allowed to
+# send it. A wildcard origin cannot be combined with credentials, and allowing
+# every origin to carry the cookie would hand any site the user's session.
+_default_origins = "http://localhost:5173,http://127.0.0.1:5173"
+ALLOWED_ORIGINS = [
+    o.strip() for o in os.environ.get("ALLOWED_ORIGINS", _default_origins).split(",") if o.strip()
+]
+CORS(app, origins=ALLOWED_ORIGINS, supports_credentials=True)
+
+# Turn AuthError into JSON so the frontend gets a readable reason, not an HTML page.
+auth.register_error_handler(app)
+
+
+@app.errorhandler(db.DatabaseNotConfigured)
+def _handle_no_database(err):
+    """A missing DATABASE_URL is a setup problem; say so instead of a 500 stack trace."""
+    return jsonify({"error": str(err)}), 503
 
 ON_VERCEL = os.environ.get('VERCEL') is not None
 _HERE = os.path.dirname(os.path.abspath(__file__))  # bundled seed data lives next to main.py
@@ -364,103 +383,286 @@ def generate_ai_saree(body_path, pallu_path, border_path, description, style, we
 # --- Database helpers ---
 
 def load_batches():
-    if storage.enabled():
-        return storage.db_load("batches", os.path.join(_HERE, "batches.json"), [])
-    if not os.path.exists(BATCHES_JSON):
-        # Return initial mock batches matched to the ones in frontend mockData.js
-        # but configured to use our API paths where appropriate
-        initial_batches = [
-            {
-                "id": "FS-2025-06-09-12",
-                "name": "Fusion Batch",
-                "status": "completed",
-                "createdOn": "09 Jun 2025, 10.30 AM",
-                "palluCount": 3,
-                "borderCount": 3,
-                "bodyCount": 3,
-                "totalDesigns": 24,
-                "generatedDesigns": 24,
-                "extraCount": 5,
-                "description": "Royal Banarasi fusion design batch",
-                "thumbnails": [
-                    "/api/static/assets/pallu-swatch.png",
-                    "/api/static/assets/border-swatch.png",
-                    "/api/static/assets/body-swatch.png"
-                ],
-                "uploadedComponents": {
-                    "pallu": [
-                        {"label": "P1", "image": "/api/static/assets/pallu-swatch.png"},
-                        {"label": "P2", "image": "/api/static/assets/pallu-swatch.png"},
-                        {"label": "P3", "image": "/api/static/assets/pallu-swatch.png"}
-                    ],
-                    "border": [
-                        {"label": "BR1", "image": "/api/static/assets/border-swatch.png"},
-                        {"label": "BR2", "image": "/api/static/assets/border-swatch.png"}
-                    ],
-                    "body": []
-                },
-                "designs": [
-                    {
-                        "id": f"FS-12-00{i+1}",
-                        "name": f"Red saree with peacock design {i+1}",
-                        "image": "/api/static/assets/red-saree.png",
-                        "templateImage": "/api/static/assets/red-saree.png", # Fallback template
-                        "tags": ["P1", "BR2", "B3"],
-                        "matchPercent": f"{85 if i%3==0 else 72 if i%3==1 else 93}% match"
-                    } for i in range(20)
-                ]
-            }
-        ]
-        with open(BATCHES_JSON, 'w') as f:
-            json.dump(initial_batches, f, indent=2)
-        return initial_batches
-        
-    try:
-        with open(BATCHES_JSON, 'r') as f:
-            return json.load(f)
-    except Exception as e:
-        print("Error reading batches.json:", e)
-        return []
+    """Every batch belonging to the signed-in user, newest first."""
+    return db.list_batches(auth.current_user_id())
 
-def save_batches(batches):
-    if storage.enabled():
-        return storage.db_save("batches", batches)
-    try:
-        with open(BATCHES_JSON, 'w') as f:
-            json.dump(batches, f, indent=2)
-    except Exception as e:
-        print("Error writing batches.json:", e)
+
+def find_batch(batch_id):
+    """One batch, but only if this user owns it. Returns None otherwise."""
+    return db.get_batch(batch_id, auth.current_user_id())
+
+
+def save_batch(batch):
+    """Insert or update a single batch for the signed-in user.
+
+    This replaces the old save_batches(whole_list), which rewrote every batch on
+    every write. With accounts that was a lost-update bug: two people generating
+    at the same time would clobber each other's collection. One row per batch
+    removes the race.
+    """
+    return db.save_batch(batch["id"], auth.current_user_id(), batch)
+
 
 # --- Routes ---
 
+# Shared app artwork and the drape reference masks belong to no account, so they
+# load without a session. Everything else under static/ is somebody's work.
+PUBLIC_STATIC_PREFIXES = ("assets/", "demo_reference/")
+
+
+def _decode_data_url(value):
+    """('image/jpeg', raw_bytes) from a base64 data URL, or None if it is not one."""
+    import base64
+
+    if not isinstance(value, str) or not value.startswith("data:"):
+        return None
+    try:
+        header, encoded = value.split(",", 1)
+        if ";base64" not in header:
+            return None
+        mime = header[5:].split(";")[0] or "application/octet-stream"
+        return mime, base64.b64decode(encoded)
+    except (ValueError, base64.binascii.Error) as exc:
+        print(f"Could not decode an inline image: {exc}")
+        return None
+
+
+def _may_read_static(filename):
+    """Whether the caller may read this static path.
+
+    Generated designs live under batches/<batch_id>/ and loom files under
+    orders/<order_id>/, so the owning record is named by the path itself. That
+    makes the check one indexed lookup with no per-file bookkeeping.
+    """
+    norm = filename.replace("\\", "/").lstrip("/")
+
+    # Defence in depth. send_from_directory already refuses to escape STATIC_DIR,
+    # but a traversal segment would otherwise sail past the prefix check below:
+    # "assets/../../secret" starts with "assets/" and would read as public.
+    if ".." in norm.split("/"):
+        return False
+
+    if norm.startswith(PUBLIC_STATIC_PREFIXES):
+        return True
+
+    parts = norm.split("/")
+    if len(parts) >= 2 and parts[0] in db.OWNABLE_TABLES:
+        # Raises AuthError (401) when there is no session at all.
+        return db.user_owns(parts[0], parts[1], auth.current_user_id())
+
+    # An unrecognised shape is not provably anyone's; require a session and allow.
+    auth.current_user_id()
+    return True
+
+
+def _persist_bytes(key, content, mime=None):
+    """Store one generated file wherever this deployment keeps them.
+
+    GCS when configured, otherwise the Postgres `files` table as before. Images
+    are far too large to want in Postgres long term, so GCS wins when present.
+    """
+    if blobstore.enabled():
+        try:
+            blobstore.upload_bytes(key, content, mime=mime)
+            return
+        except Exception as exc:
+            # Fall through to Postgres: losing the file would be worse than a slow read.
+            print(f"Upload failed for {key}, storing in Postgres instead: {exc}")
+    db.put_file(key, content, mime=mime, user_id=auth.current_user_id(required=False))
+
+
+def _persist_generated(directory):
+    """Store everything just written under `directory` for other instances to serve."""
+    if blobstore.enabled():
+        try:
+            uploaded, skipped, failed = blobstore.upload_dir(
+                directory, STATIC_DIR, skip_existing=False
+            )
+            if not failed:
+                return
+            print(f"{failed} file(s) failed to upload; keeping a Postgres copy")
+        except Exception as exc:
+            print(f"Upload failed for {directory}, storing in Postgres instead: {exc}")
+    db.persist_dir(directory, STATIC_DIR, user_id=auth.current_user_id(required=False))
+
+
 @app.route('/api/static/<path:filename>')
 def serve_static(filename):
-    """Serves generated design images and uploaded swatch files."""
+    """Serves generated design images, uploaded swatches and loom files."""
+    if not _may_read_static(filename):
+        # 404 rather than 403: a 403 would confirm the file exists to a stranger.
+        return jsonify({"error": "File not found"}), 404
+
     if os.path.exists(os.path.join(STATIC_DIR, filename)):
         return send_from_directory(STATIC_DIR, filename)
-    # Not on this instance's disk: fall back to the database copy (serverless hosting)
-    if storage.enabled():
-        stored = storage.get_file(filename.replace("\\", "/"))
-        if stored:
-            content, mime = stored
-            return Response(content, mimetype=mime, headers={"Cache-Control": "public, max-age=3600"})
+
+    key = filename.replace("\\", "/")
+
+    # Not on this instance's disk: hand out a short-lived signed URL and let the
+    # browser fetch the bytes straight from Google. The ownership check above has
+    # already passed, and the URL expires in minutes. An <img src> follows this
+    # redirect on its own, so the frontend needs no changes.
+    if blobstore.enabled():
+        try:
+            url = blobstore.signed_url(key)
+            if url:
+                response = redirect(url, code=302)
+                # The redirect names one user's private object: never let a shared
+                # cache keep it, and expire it with the signature.
+                response.headers["Cache-Control"] = "private, no-store"
+                return response
+        except Exception as exc:  # a GCS outage must not take the whole app down
+            print(f"Object storage lookup failed for {key}, falling back: {exc}")
+
+    # Last resort: the copy kept in Postgres.
+    stored = db.get_file(key)
+    if stored:
+        content, mime = stored
+        # private: this is one account's design, so no shared/CDN caching.
+        return Response(content, mimetype=mime, headers={"Cache-Control": "private, max-age=3600"})
     return jsonify({"error": "File not found"}), 404
 
+
+# ===========================================================================
+# AUTHENTICATION
+# ===========================================================================
+@app.route('/api/auth/google', methods=['POST'])
+def auth_google():
+    """Exchange a Google ID token for a session cookie.
+
+    The ID token's signature is checked against Google's public keys before any
+    of its claims are believed, so a caller cannot simply assert an email.
+    """
+    payload = request.get_json(silent=True) or {}
+    credential = payload.get("credential") or payload.get("id_token")
+
+    claims = auth.verify_google_token(credential)
+    user = auth.login_and_claim(claims)
+
+    response = jsonify({"authenticated": True, "user": user})
+    auth.set_session_cookie(response, auth.issue_session(user))
+    return response
+
+
+@app.route('/api/auth/me', methods=['GET'])
+def auth_me():
+    """Who the caller is, for restoring a session on page load."""
+    user = auth.current_user(required=False)
+    if user is None:
+        return jsonify({"authenticated": False, "user": None})
+    return jsonify({"authenticated": True, "user": user})
+
+
+@app.route('/api/auth/mine', methods=['GET'])
+@auth.require_auth
+def auth_mine():
+    """What the signed-in account owns. Self-scoped: says nothing about others."""
+    user = auth.current_user()
+    with db.connect() as conn:
+        counts = {
+            table: conn.execute(
+                f"SELECT count(*) FROM {table} WHERE user_id = %s", (user["id"],)
+            ).fetchone()[0]
+            for table in db.OWNABLE_TABLES
+        }
+    return jsonify({"user": user, "owns": counts})
+
+
+@app.route('/api/auth/logout', methods=['POST'])
+def auth_logout():
+    """Clear the session cookie."""
+    response = jsonify({"authenticated": False})
+    auth.clear_session_cookie(response)
+    return response
+
+
+@app.route('/api/health', methods=['GET'])
+def health():
+    """Setup and liveness check: is the database reachable and is sign-in configured?
+
+    Deliberately unauthenticated and deliberately vague on failure detail beyond
+    the error text, because it must work before anyone can sign in.
+    """
+    report = {
+        "api": "ok",
+        "databaseConfigured": db.enabled(),
+        "database": "unknown",
+        "googleSignIn": "configured" if auth.configured() else "not configured",
+        "sessionSecret": "set" if os.environ.get("SESSION_SECRET") else "using dev fallback",
+        # Deliberately not the address itself: this endpoint has to answer
+        # before anyone can sign in, so it must disclose nothing personal.
+        "bootstrapOwner": "set" if auth.BOOTSTRAP_OWNER_EMAIL else None,
+        # Which interpreter is actually serving. On a machine with more than one
+        # Python, `pip install` can land packages in the other one, so this is
+        # what tells you which pip to use: python -m pip, from this path.
+        "python": sys.executable,
+        "pythonVersion": sys.version.split()[0],
+        "imageStorage": "object storage" if blobstore.enabled() else "local disk + postgres",
+        "blobBucket": blobstore.BUCKET or None,
+    }
+
+    if blobstore.enabled():
+        # Prove the credentials actually work, rather than only that a name is set.
+        try:
+            blobstore.check()
+            report["blobStore"] = "connected"
+        except Exception as exc:
+            report["blobStore"] = "could not connect"
+            report["blobStoreError"] = str(exc).strip().splitlines()[0][:300]
+
+    if not db.enabled():
+        report["database"] = "no DATABASE_URL set"
+        return jsonify(report), 503
+
+    try:
+        with db.connect() as conn:
+            version = conn.execute("SELECT version()").fetchone()[0]
+            counts = {}
+            for table in ("users",) + db.OWNABLE_TABLES:
+                counts[table] = conn.execute(f"SELECT count(*) FROM {table}").fetchone()[0]
+            unclaimed = {
+                t: conn.execute(f"SELECT count(*) FROM {t} WHERE user_id IS NULL").fetchone()[0]
+                for t in db.OWNABLE_TABLES
+            }
+        report["database"] = "connected"
+        report["server"] = version.split(" on ")[0]
+        report["rows"] = counts
+        report["unclaimedRows"] = unclaimed
+        return jsonify(report)
+    except Exception as exc:
+        report["database"] = "could not connect"
+        report["error"] = str(exc).strip().splitlines()[0][:300]
+        return jsonify(report), 503
+
+
+@app.route('/api/auth/config', methods=['GET'])
+def auth_config():
+    """The public client id, so the frontend needs no build-time copy of it."""
+    return jsonify({"googleClientId": auth.GOOGLE_CLIENT_ID, "configured": auth.configured()})
+
 @app.route('/api/batches', methods=['GET'])
+@auth.require_auth
 def get_batches():
     """Returns all generated design batches."""
     return jsonify(load_batches())
 
 @app.route('/api/batches/<batch_id>', methods=['GET'])
+@auth.require_auth
 def get_batch(batch_id):
-    """Returns a specific batch's details."""
-    batches = load_batches()
-    for batch in batches:
-        if batch['id'] == batch_id or batch_id == "0": # Support fallback index 0
-            return jsonify(batch)
-    return jsonify({"error": "Batch not found"}), 404
+    """Returns one of this user's batches. Another account's id answers 404."""
+    if batch_id == "0":  # legacy fallback: the caller's newest batch
+        batches = load_batches()
+        if batches:
+            return jsonify(batches[0])
+        return jsonify({"error": "Batch not found"}), 404
+
+    batch = find_batch(batch_id)
+    if batch is None:
+        return jsonify({"error": "Batch not found"}), 404
+    return jsonify(batch)
 
 @app.route('/api/generate', methods=['POST'])
+@auth.require_auth
 def generate():
     """Accepts component uploads and generates the saree layouts."""
     # Create distinct batch ID
@@ -602,38 +804,23 @@ def generate():
         "designs": designs
     }
 
-    # Save to batches.json
-    batches = load_batches()
-    batches.insert(0, new_batch)
-    save_batches(batches)
-    storage.persist_dir(batch_dir, STATIC_DIR)  # no-op unless a database is configured
+    # One row for this batch, owned by whoever generated it.
+    save_batch(new_batch)
+    _persist_generated(batch_dir)
 
     return jsonify(new_batch)
 
 # --- Orders and Jacquard Generation ---
 
 def load_orders():
-    if storage.enabled():
-        return storage.db_load("orders", os.path.join(_HERE, "orders.json"), [])
-    if not os.path.exists(ORDERS_JSON):
-        with open(ORDERS_JSON, 'w') as f:
-            json.dump([], f, indent=2)
-        return []
-    try:
-        with open(ORDERS_JSON, 'r') as f:
-            return json.load(f)
-    except Exception as e:
-        print("Error reading orders.json:", e)
-        return []
+    """Every order belonging to the signed-in user, newest first."""
+    return db.list_orders(auth.current_user_id())
 
-def save_orders(orders):
-    if storage.enabled():
-        return storage.db_save("orders", orders)
-    try:
-        with open(ORDERS_JSON, 'w') as f:
-            json.dump(orders, f, indent=2)
-    except Exception as e:
-        print("Error writing orders.json:", e)
+
+def save_order(order):
+    """Insert or update a single order for the signed-in user."""
+    return db.save_order(order["id"], auth.current_user_id(), order)
+
 
 def get_color_name(r, g, b):
     # Common saree color palette matching warp/weft options
@@ -838,11 +1025,13 @@ def generate_loom_files(template_path, order_dir):
         return False, f"Loom generation failed: {str(e)} -> {traceback.format_exc()}", {}
 
 @app.route('/api/orders', methods=['GET'])
+@auth.require_auth
 def get_orders():
     """Lists all placed orders for the weaver dashboard."""
     return jsonify(load_orders())
 
 @app.route('/api/orders', methods=['POST'])
+@auth.require_auth
 def place_order():
     """Places a new order from the customer view."""
     data = request.json or {}
@@ -955,22 +1144,15 @@ def place_order():
         "yarnColors": yarn_colors
     }
     
-    orders = load_orders()
-    orders.insert(0, new_order)
-    save_orders(orders)
-    
+    save_order(new_order)
+
     return jsonify(new_order), 201
 
 @app.route('/api/orders/<order_id>/generate-jacquard', methods=['POST'])
+@auth.require_auth
 def run_jacquard(order_id):
     """Processes the flat template image into digital Jacquard card loom punch commands."""
-    orders = load_orders()
-    target_order = None
-    for o in orders:
-        if o["id"] == order_id:
-            target_order = o
-            break
-            
+    target_order = db.get_order(order_id, auth.current_user_id())
     if not target_order:
         return jsonify({"error": "Order not found"}), 404
         
@@ -1005,7 +1187,7 @@ def run_jacquard(order_id):
     
     success, err_msg, preview_data = generate_loom_files(local_path, order_dir)
     if success:
-        storage.persist_dir(order_dir, STATIC_DIR)  # no-op unless a database is configured
+        _persist_generated(order_dir)
     
     if not success:
         return jsonify({"error": f"Failed to generate loom files: {err_msg}"}), 500
@@ -1063,19 +1245,17 @@ def run_jacquard(order_id):
         }
     }
     
-    save_orders(orders)
+    save_order(target_order)
     return jsonify(target_order)
 
 @app.route('/api/orders/<order_id>', methods=['DELETE'])
+@auth.require_auth
 def delete_order(order_id):
     """Deletes an order and its associated loom files from the system."""
-    orders = load_orders()
-    filtered_orders = [o for o in orders if o["id"] != order_id]
-    
-    if len(orders) == len(filtered_orders):
+    # Scoped to this user: deleting someone else's order id must 404, not succeed.
+    if not db.delete_order(order_id, auth.current_user_id()):
         return jsonify({"error": "Order not found"}), 404
-        
-    save_orders(filtered_orders)
+
     
     # Delete associated order files if they exist
     import shutil
@@ -1097,42 +1277,23 @@ SIMULATIONS_JSON = os.path.join(BASE_DIR, "simulations.json")
 
 
 def load_simulations():
-    if storage.enabled():
-        return storage.db_load("simulations", os.path.join(_HERE, "simulations.json"), [])
-    if not os.path.exists(SIMULATIONS_JSON):
-        return []
-    try:
-        with open(SIMULATIONS_JSON, 'r') as f:
-            return json.load(f)
-    except Exception as e:
-        print("Error reading simulations.json:", e)
-        return []
+    """Saved drapes for the signed-in user, newest first.
 
-
-def save_simulations(sims):
-    if storage.enabled():
-        return storage.db_save("simulations", sims)
-    try:
-        with open(SIMULATIONS_JSON, 'w') as f:
-            json.dump(sims, f, indent=2)
-    except Exception as e:
-        print("Error writing simulations.json:", e)
-
-
-def _sim_owner():
-    return (request.args.get('owner') or 'guest').strip().lower()
+    Ownership used to come from a `?owner=` query parameter, which any caller
+    could set to any value. It now comes from the verified session instead.
+    """
+    return db.list_simulations(auth.current_user_id())
 
 
 @app.route('/api/simulations', methods=['GET'])
+@auth.require_auth
 def get_simulations():
-    """Lists the owner's saved simulations, newest first."""
-    owner = _sim_owner()
-    sims = [s for s in load_simulations() if s.get("owner") == owner]
-    sims.sort(key=lambda s: s.get("savedAt", ""), reverse=True)
-    return jsonify(sims)
+    """Lists this user's saved simulations, newest first."""
+    return jsonify(load_simulations())
 
 
 @app.route('/api/simulations', methods=['POST'])
+@auth.require_auth
 def upsert_simulation():
     """Inserts or replaces a simulation by id (one entry per simulation session)."""
     # sendBeacon posts as text/plain, so parse regardless of content type
@@ -1140,22 +1301,35 @@ def upsert_simulation():
     sim_id = data.get("id")
     if not sim_id:
         return jsonify({"error": "id is required"}), 400
-    data["owner"] = (data.get("owner") or 'guest').strip().lower()
-    sims = [s for s in load_simulations() if s.get("id") != sim_id]
-    sims.append(data)
-    save_simulations(sims)
+
+    user_id = auth.current_user_id()
+    # A client-supplied owner is no longer trusted; the session decides.
+    data.pop("owner", None)
+
+    # Thumbnails arrive as a base64 data URL. Storing that inline is what made
+    # the old simulations.json 3.8 MB, so it goes to the files table instead and
+    # the row keeps only a key.
+    thumbnail_key = None
+    thumbnail = data.get("thumbnail")
+    if isinstance(thumbnail, str) and thumbnail.startswith("data:"):
+        decoded = _decode_data_url(thumbnail)
+        if decoded:
+            mime, raw = decoded
+            ext = {"image/png": "png", "image/webp": "webp"}.get(mime, "jpg")
+            thumbnail_key = f"simulations/{sim_id}/thumbnail.{ext}"
+            _persist_bytes(thumbnail_key, raw, mime=mime)
+            data.pop("thumbnail", None)
+
+    db.save_simulation(sim_id, user_id, data, thumbnail_key=thumbnail_key)
     return jsonify({"success": True, "id": sim_id})
 
 
 @app.route('/api/simulations/<sim_id>', methods=['DELETE'])
+@auth.require_auth
 def delete_simulation(sim_id):
-    """Deletes one of the owner's saved simulations."""
-    owner = _sim_owner()
-    sims = load_simulations()
-    kept = [s for s in sims if not (s.get("id") == sim_id and s.get("owner") == owner)]
-    if len(kept) == len(sims):
+    """Deletes one of this user's saved simulations."""
+    if not db.delete_simulation(sim_id, auth.current_user_id()):
         return jsonify({"error": "Simulation not found"}), 404
-    save_simulations(kept)
     return jsonify({"success": True})
 
 
